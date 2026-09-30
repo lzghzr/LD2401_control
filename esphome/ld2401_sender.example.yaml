@@ -1,0 +1,35 @@
+# Copy this file, ld2401_control.yaml and ld2401_control_advertiser.h together.
+# Create a local secrets.yaml with the three referenced values.
+esphome:
+  name: ld2401-sender
+  friendly_name: LD2401 Sender
+  min_version: 2026.9.0
+
+esp32:
+  variant: esp32c3
+  framework:
+    type: esp-idf
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+logger:
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+
+packages:
+  ld2401_control: !include ld2401_control.yaml
+
+esp32_ble_tracker:
+  scan_parameters:
+    continuous: true
+    active: true
+
+bluetooth_proxy:
+  active: true

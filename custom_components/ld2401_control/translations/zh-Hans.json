@@ -1,0 +1,38 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "选择要控制的 LD2401",
+        "description": "没有设备能被自动识别（可能改过名字、且还没收到过它的广播）。请选择要控制的雷达，密钥沿用同一条目。",
+        "data": {
+          "address": "设备"
+        }
+      },
+      "reconfigure": {
+        "title": "更新 LD2401 控制设置",
+        "description": "Bindkey 会自动跟随内置 BTHome 集成，这里只需设置 ESPHome 动作。",
+        "data": {
+          "esphome_action": "ESPHome 动作（domain.service，留空为自动）"
+        },
+        "data_description": {
+          "esphome_action": "留空则从当前能收到该雷达广播的 ESPHome 节点发送。"
+        }
+      }
+    },
+    "error": {
+      "invalid_action": "动作名称格式应为 domain.service。"
+    },
+    "abort": {
+      "no_devices_found": "在内置 BTHome 集成中没有发现带 Bindkey 的设备。请先在那里添加雷达，之后本集成会自动建立条目。",
+      "no_bthome_entry": "内置 BTHome 集成还没有为该设备建立带 Bindkey 的条目。",
+      "user_removed": "此条目此前被手动删除，不会自动重建；如需恢复请再次从本流程添加。"
+    }
+  },
+  "entity": {
+    "button": {
+      "out_low": {"name": "OUT 保持低电平"},
+      "out_high": {"name": "OUT 保持高电平"},
+      "out_auto": {"name": "OUT 恢复自动"}
+    }
+  }
+}

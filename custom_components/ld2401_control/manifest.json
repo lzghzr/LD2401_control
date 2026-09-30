@@ -1,0 +1,29 @@
+{
+  "domain": "ld2401_control",
+  "name": "HLK LD2401 OUT Control",
+  "version": "1.0.0",
+  "bluetooth": [
+    {
+      "connectable": false,
+      "local_name": "HLK-LD24*",
+      "service_data_uuid": "0000fcd2-0000-1000-8000-00805f9b34fb"
+    }
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "bluetooth"
+  ],
+  "iot_class": "local_push",
+  "integration_type": "device",
+  "requirements": [
+    "bthome-ble>=3.9.1"
+  ],
+  "loggers": [
+    "ld2401_control"
+  ],
+  "documentation": "https://github.com/lzghzr/ld2401_control",
+  "issue_tracker": "https://github.com/lzghzr/ld2401_control/issues",
+  "codeowners": [
+    "@lzghzr"
+  ]
+}

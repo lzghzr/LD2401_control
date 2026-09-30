@@ -1,0 +1,105 @@
+{
+  "description": "Original copied-file hashes and normalized/adapted public-file hashes; text uses LF.",
+  "files": [
+    {
+      "path": "custom_components/ld2401_control/__init__.py",
+      "sha256": "6d97d760e9101fa6a7110b2efd0e0edf2aebfeb8d7c8af3262ea1818a66bcba3",
+      "distribution_sha256": "6d97d760e9101fa6a7110b2efd0e0edf2aebfeb8d7c8af3262ea1818a66bcba3"
+    },
+    {
+      "path": "custom_components/ld2401_control/bthome.py",
+      "sha256": "df5839e594d948d5489bdbfaceb31815e5d35a3d1454c02c7085863bcf08973a",
+      "distribution_sha256": "df5839e594d948d5489bdbfaceb31815e5d35a3d1454c02c7085863bcf08973a"
+    },
+    {
+      "path": "custom_components/ld2401_control/button.py",
+      "sha256": "dd97def8146608a37d16e0ba10a58ec555fcad1c8b8449e9a613b4dbdaff0683",
+      "distribution_sha256": "dd97def8146608a37d16e0ba10a58ec555fcad1c8b8449e9a613b4dbdaff0683"
+    },
+    {
+      "path": "custom_components/ld2401_control/codec.py",
+      "sha256": "af2743e7b0b1c4342cf0a39e8c9a1cd82edb19f44960e9fbaf865c3b1f268021",
+      "distribution_sha256": "af2743e7b0b1c4342cf0a39e8c9a1cd82edb19f44960e9fbaf865c3b1f268021"
+    },
+    {
+      "path": "custom_components/ld2401_control/config_flow.py",
+      "sha256": "9e9171388340284fb2b7d54f260208165ab7dea50b1c4f186b3919267f4a54d9",
+      "distribution_sha256": "93b214fe27f731adb0990aa89924b5aaec826ba0d10203e6a05694f5c419689b"
+    },
+    {
+      "path": "custom_components/ld2401_control/const.py",
+      "sha256": "e0944bf067de4626c7072a1cd6ac0e1701f6b97d7a43dd5eb70a880b9f0024d3",
+      "distribution_sha256": "e0944bf067de4626c7072a1cd6ac0e1701f6b97d7a43dd5eb70a880b9f0024d3"
+    },
+    {
+      "path": "custom_components/ld2401_control/coordinator.py",
+      "sha256": "2cc9d926598dda1cd9c301d9de88b38a55f06656b0b1fd6719b32e500e5293f5",
+      "distribution_sha256": "d6404f484480feb9525af5aa20fc44dd3e1cc08bf863542d3c8e85c6a0edd439"
+    },
+    {
+      "path": "custom_components/ld2401_control/manifest.json",
+      "sha256": "98deb34a9fd1f1ac5d323ae9488319fedda12df56668d763cd2bbfcf29b7657d",
+      "distribution_sha256": "c13251e05a377473b6b98f92715e4c059461031283c70caaff83fcffa502f481"
+    },
+    {
+      "path": "custom_components/ld2401_control/mirror.py",
+      "sha256": "3eda1ece2b0c0decd1ee600eff0dd58a1c86580190389a506e43b55f443f3efe",
+      "distribution_sha256": "06fa2c4ff81af8b5b45ca67a052947297e60bdd31389de285d763135891a63d8"
+    },
+    {
+      "path": "custom_components/ld2401_control/strings.json",
+      "sha256": "537ec91943b3d042d74765ff4cd3db44f28d931ffb951608473b2e6714e56de6",
+      "distribution_sha256": "537ec91943b3d042d74765ff4cd3db44f28d931ffb951608473b2e6714e56de6"
+    },
+    {
+      "path": "custom_components/ld2401_control/translations/zh-Hans.json",
+      "sha256": "8f53c0bd7f380346a0c2f038a081dd719156a5a1231bc2c2a2912c1b60e0ea66",
+      "distribution_sha256": "8f53c0bd7f380346a0c2f038a081dd719156a5a1231bc2c2a2912c1b60e0ea66"
+    },
+    {
+      "path": "Developer/src/payload.c",
+      "sha256": "594ce181fe201e5d26a11ce9d248714717b07f983c1e98e71c077aa08571958d",
+      "distribution_sha256": "b531e179dab5c4a4f2a2b0d9a3c2a8f9f272345801f2aeb9635988336a013c0a"
+    },
+    {
+      "path": "Developer/src/rxcontrol.c",
+      "sha256": "313e928a80dcc74a60496e5af8bf780726868491d1d89f30bc8fb8d962935df2",
+      "distribution_sha256": "63ae234eb92b63d3c873e490da44cfe6cfcbedb7e865dc8389d15709f21da735"
+    },
+    {
+      "path": "Developer/src/scanrsp.c",
+      "sha256": "221fe8a72a80fa2855fcd1030d610659dff995e8293c37acd9aeaf4962b63877",
+      "distribution_sha256": "d55dfa95f217a6108f6cc08fadab9bb043dd0330bee6513dbc7cd8d43f2b97dc"
+    },
+    {
+      "path": "Developer/src/hooks.s",
+      "sha256": "261679bf56618e15128d57a28e60d8fe8a4caae50905a59c43b8a8ebabc071ba",
+      "distribution_sha256": "04d20218d67f1854663892f9f1f7cdad13cc830b6060692921e215b39f9e8c72"
+    },
+    {
+      "path": "Developer/src/control_protocol.py",
+      "sha256": "ce02e3bd801ee5f8b801ab0f7e2bdedf13f44291dba14c26c32890bdd6b217cf",
+      "distribution_sha256": "1b1b07dd7d52ea8aada5dfd9ae07cec63993baa0c4e97b3a0b864bf38ec3cace"
+    },
+    {
+      "path": "Developer/linker/layout.ld",
+      "sha256": "1aa5e77e41ce315c748e9a4d3af9078d84771c77517e7f692d22c3f4d4c553a0",
+      "distribution_sha256": "414f9eee3887853d1808f9b8d14ccbf6ffb5bc547128c20ee036ece36aef764c"
+    },
+    {
+      "path": "esphome/ld2401_control_advertiser.h",
+      "sha256": "867fd25e003c667803e3fab037784b718af71252f0f868a54d96d7f731b716d9",
+      "distribution_sha256": "8b6a2b882102096dac09a48a2daa7b96c17a378311ea75c57ea936ab16145891"
+    },
+    {
+      "path": "esphome/ld2401_control.yaml",
+      "sha256": "aea2c610f86ee0b16e79da0339f61f7ff072ff0cbfdb0eff9210c2594a8a0eff",
+      "distribution_sha256": "7255e3b3d59537213d610b2f519daaa7b7e8dfa2256c557ac7ff3a8d5d40de63"
+    },
+    {
+      "path": "Developer/tools/ld24_elf_sections.py",
+      "sha256": "dd8638370ba14ea3c309645db95064527795668a6d7e7443dc5916fc86d94578",
+      "distribution_sha256": "dd8638370ba14ea3c309645db95064527795668a6d7e7443dc5916fc86d94578"
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "description": "Copied Auditor source identities and the packaged identities of role tools; added tools are identified separately.",
+  "files": [
+    {
+      "path": "Auditor/tools/audit_ld2401_ufw.py",
+      "source": "Auditor/tools/audit_ld2401_ufw.py",
+      "sha256": "d93ba24bef3716efa6ebb9f03f273134dc97a832d8f8099f69128387e3301380",
+      "distribution_sha256": "a1c972701323123f1987ea5883353641606153cf625bcc7bb459d29fc8619e1d"
+    },
+    {
+      "path": "Auditor/tools/fw_audit.py",
+      "source": "Auditor/tools/fw_audit.py",
+      "sha256": "1f7d344341731165eecbe31f9fd8660f76490764ee701781c058ae672b99fc31",
+      "distribution_sha256": "d9663213ef25e2b7d238665da0a62596e410dedddb16b7ceb2dfa4b6abe1415d"
+    },
+    {
+      "path": "Auditor/tools/q32s_xref.py",
+      "source": "Auditor/tools/q32s_xref.py",
+      "sha256": "8ea1ea8abfe3e274240d388711cfca7e2afa850ef301b05e1f58da173b2b079c",
+      "distribution_sha256": "d081eea9832edc2ebe1be369dcdf8a099f73c12cb69edfd0a531dbd2b38f13d9"
+    },
+    {
+      "path": "Auditor/tools/_paths.py",
+      "origin": "Created for the public role toolkit",
+      "distribution_sha256": "29d04ee8f6bf5a804c75dc8806eb02ed26c89632fe405aa22085391356d72d1b"
+    },
+    {
+      "path": "Auditor/tools/selftest.py",
+      "origin": "Created for the public role toolkit",
+      "distribution_sha256": "97868a7fb37039592ba40a43c29b06e83ad9b240482f2468f9346e94366b8da0"
+    },
+    {
+      "path": "Tester/tools/capture_ble.py",
+      "origin": "Created for the public role toolkit",
+      "distribution_sha256": "f0789d6e520a9aa70648db715df6272b5fd0e62831f6f8328795b447cbe292cf"
+    },
+    {
+      "path": "Tester/tools/decode_capture.py",
+      "origin": "Created for the public role toolkit",
+      "distribution_sha256": "dd37b8030c00761c3cc0b16f76f49c96818e082a0cce5f4ec7ed0ea973e96b14"
+    },
+    {
+      "path": "Tester/tools/control_frame.py",
+      "origin": "Created for the public role toolkit",
+      "distribution_sha256": "e49e5edd8f627311318323f7aa6d28e194fe31f78195ff15afe71afc05069692"
+    },
+    {
+      "path": "Tester/tools/check_capture.py",
+      "origin": "Created for the public role toolkit",
+      "distribution_sha256": "31ae2976e87e534f2c66284df13ff66e58b5e612198351c77b5c71fd9938e863"
+    }
+  ]
+}

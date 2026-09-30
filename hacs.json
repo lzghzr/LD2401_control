@@ -1,0 +1,6 @@
+{
+  "name": "HLK LD2401 OUT Control",
+  "hide_default_branch": true,
+  "homeassistant": "2026.3.0",
+  "render_readme": true
+}

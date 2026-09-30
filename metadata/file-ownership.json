@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "description": "Role ownership; GitHub CODEOWNERS separately lists human maintainers.",
+  "rules": {
+    "Developer/": "Developer",
+    "custom_components/": "Developer",
+    "esphome/": "Developer",
+    "Auditor/": "Auditor",
+    "Tester/": "Tester",
+    "tools/": "Maintainer",
+    "docs/": "Maintainer",
+    "metadata/": "Maintainer",
+    "third_party/": "Maintainer",
+    ".github/": "Maintainer",
+    ".gitattributes": "Maintainer",
+    ".gitignore": "Maintainer",
+    "AGENTS.md": "Maintainer",
+    "CONTRIBUTING.md": "Maintainer",
+    "README.md": "Maintainer",
+    "CHANGELOG.md": "Maintainer",
+    "LICENSE": "Maintainer",
+    "NOTICE.md": "Maintainer",
+    "hacs.json": "Maintainer"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "module": "LD2401",
+  "platform": "JieLi Q32S",
+  "target_firmware": "LD2401_2.50.24110415.ufw",
+  "firmware_version": "2.50.26092430",
+  "factory_filename": "LD2401_2.50.24110415.ufw",
+  "factory_bytes": 598112,
+  "factory_sha256": "3e518750921f9392eb71da0becc641915d4204376f7eb571c54ed4f586bab9a7",
+  "reference_bytes": 607840,
+  "reference_sha256": "7e74ed708e109bbd721371a2b74244ea52743be85e9b251198cecdf1f23add7d",
+  "hardware_status": "USER_CONFIRMED_TESTED",
+  "confirmed_on": "2026-09-30",
+  "coverage": null,
+  "source": "Developer/src",
+  "builder": "Developer/tools/build.py",
+  "git_commit": null,
+  "record_type": "reference imported before first repository commit",
+  "toolchain_sha256s": {
+    "clang.exe": "0ae79bfb1e79018a12f401050674b6ddc90c202bf81a07832e37a73c3a447c25",
+    "q32s-ld.exe": "d279ad52a596138adb3d7a13fe9986fe61843fa2bb1846cf31abdf441a8cb34c",
+    "llvm-objdump.exe": "18c3c29205781c115a12ebc56ed2fdf0d55a95a694778ccce78b48979f1faa86"
+  }
+}

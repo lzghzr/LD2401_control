@@ -1,0 +1,38 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Select the LD2401 control device",
+        "description": "No device could be recognised automatically (a renamed device that has not advertised yet). Choose the radar to control; its Bindkey is taken from the same entry.",
+        "data": {
+          "address": "Device"
+        }
+      },
+      "reconfigure": {
+        "title": "Update LD2401 control settings",
+        "description": "The Bindkey follows the built-in BTHome integration automatically, so only the ESPHome action needs to be set here.",
+        "data": {
+          "esphome_action": "ESPHome action (domain.service, or empty for automatic)"
+        },
+        "data_description": {
+          "esphome_action": "Leave empty to broadcast from the ESPHome node that currently hears the radar."
+        }
+      }
+    },
+    "error": {
+      "invalid_action": "Enter an action as domain.service."
+    },
+    "abort": {
+      "no_devices_found": "No device with a Bindkey was found in the built-in BTHome integration. Add the radar there first; its entry is then created here automatically.",
+      "no_bthome_entry": "The built-in BTHome integration has no entry with a Bindkey for this device yet.",
+      "user_removed": "This entry was removed earlier and is not recreated automatically; add it again from this flow if you want it back."
+    }
+  },
+  "entity": {
+    "button": {
+      "out_low": {"name": "Hold OUT low"},
+      "out_high": {"name": "Hold OUT high"},
+      "out_auto": {"name": "Return OUT to auto"}
+    }
+  }
+}

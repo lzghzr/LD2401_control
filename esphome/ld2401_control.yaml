@@ -1,0 +1,38 @@
+esphome:
+  includes:
+    - ld2401_control_advertiser.h
+
+esp32_ble:
+  advertising: true
+
+api:
+  actions:
+    - action: ld2401_control_broadcast
+      variables:
+        payload: string
+      then:
+        - lambda: |-
+            if (!ld2401_control::start(payload)) {
+              ESP_LOGW("ld2401_control", "Control frame not sent: %s", ld2401_control::last_error());
+            }
+        # Report the result to Home Assistant (auto-detected as
+        # supports_response: status): a refused frame becomes a failed service
+        # call instead of a silent success.
+        - api.respond:
+            success: !lambda 'return ld2401_control::tx_active();'
+            error_message: !lambda 'return ld2401_control::last_error();'
+        # The broadcast window, restarted by every accepted frame (a newer
+        # command replaces the one in flight); stop() is a no-op when nothing
+        # is running.
+        - if:
+            condition:
+              lambda: 'return ld2401_control::tx_active();'
+            then:
+              - script.execute: ld2401_control_broadcast_window
+
+script:
+  - id: ld2401_control_broadcast_window
+    mode: restart
+    then:
+      - delay: 1s
+      - lambda: 'ld2401_control::stop();'

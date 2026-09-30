@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+secrets.yaml
+secrets.*.yaml
+*.local.yaml
+.esphome/
+vendor/
+build/
+local/
+*.ufw
+*.apk
+*.elf
+*.o
+*.bin
+*.log

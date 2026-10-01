@@ -14,8 +14,14 @@ ESP_ACTION_TIME = 2.1
 MODE_SETTLE_TIME = 5.0
 RUNTIME_CHECK_INTERVAL = 5.0
 
+# Automatic senders must have heard this radar recently. Nearby RSSI values
+# share a 3 dB band; retain the previous sender only if reception also keeps up.
+SENDER_MAX_AGE = 30.0
+SENDER_RSSI_HYSTERESIS = 3
+SENDER_TIME_HYSTERESIS = 5.0
+
 # ESPHome actions with this name broadcast the control frames. Nodes offering it
-# are discovered automatically; the one currently hearing the radar is preferred.
+# are discovered automatically and ranked by fresh per-scanner reception.
 ESPHOME_DOMAIN = "esphome"
 ESPHOME_ACTION_SUFFIX = "ld2401_control_broadcast"
 

@@ -1,6 +1,6 @@
 # LD2401 OUT Control for Home Assistant
 
-Integration **1.1.1** provides one **OUT mode** select entity with three options:
+Integration **1.1.2** provides one **OUT mode** select entity with three options:
 `auto`, `hold_low`, and `hold_high`. Suggested entity id:
 `select.ld2401_<short address>_out_mode`. The id and unique id are anchored on the
 module address, so device renaming and translations do not change them.
@@ -89,22 +89,31 @@ The module must be in range of a Home Assistant Bluetooth adapter. Home Assistan
 ESPHome nodes expose the broadcast through an action named **`ld2401_control_broadcast`** (see [the generic ESPHome example](../esphome/ld2401_sender.example.yaml)). At every command the integration picks the node to use:
 
 1. An action set in **Reconfigure**, while that service still exists.
-2. Otherwise, among scanners hearing the radar, prefer the source of the last authenticated frame, then the strongest received signal. Match the scanner's `adapter` (ESPHome node name) to `esphome.<node>_ld2401_control_broadcast`; the scanner's display name also contains its Bluetooth address and is not the service prefix.
-3. If reception cannot be attributed, the alphabetically first candidate.
+2. Otherwise, match each scanner's `adapter` (ESPHome node name) to an available `esphome.<node>_ld2401_control_broadcast` action. Keep only nodes whose own reception timestamp for this radar is at most **30 seconds** old, including installations with only one sender.
+3. Find the strongest RSSI among those nodes. Within **3 dB** of that signal, choose the newest reception; retain the previously used sender if it is in that band and its reception lags the newest by at most **five seconds**. Identical signal/time ties use stable action-name ordering. Sender history updates after a successful ESPHome action call; it does not imply physical delivery confirmation.
 
-When no node offers the action, commands fail with an error saying so. **Reconfigure** only sets this action; the Bindkey needs no attention there.
+The timestamp comes from the public per-address `discovered_device_timestamps`
+API. HA's aggregated reception source does not receive extra routing priority.
+Ranking reads HA's cached scanner data only when sending a command; it adds no
+advertisement decryption or continuous polling.
 
-Version 1.1.1 fixes automatic sender matching in installations with multiple
-ESPHome nodes. Upgrade the custom integration and restart HA; firmware 26092431
-and the ESPHome broadcast action do not need an update for this fix. To select a
+When no node offers the action, commands fail with an error saying so. If actions
+exist but no matching node has recent radar reception, automatic selection also
+fails with a clear error. Check reception or specify a sender explicitly in
+**Reconfigure**; explicit actions bypass automatic signal/time ranking.
+**Reconfigure** only sets this action; the Bindkey needs no attention there.
+
+Version 1.1.2 uses fresh reception and signal strength for automatic routing in
+installations with multiple ESPHome nodes. Upgrade the custom integration and
+restart HA; firmware 26092431 and the ESPHome broadcast action do not need an update.
+To select a
 sender explicitly, enter its complete `esphome.<node>_ld2401_control_broadcast`
 action in **Reconfigure**.
 
 If the action succeeds but the radar does not report the selected mode within
 the settling window, HA logs `OUT mode feedback did not converge` with the
-chosen action, requested/observed mode and counter. A fallback sender choice
-also produces a warning. Debug logs record each selected sender without logging
-the Bindkey or control payload.
+chosen action, requested/observed mode and counter. Debug logs record the selected
+sender, RSSI and reception age without logging the Bindkey or control payload.
 
 After a selection, the integration waits for a new authenticated counter that arrived after the selection, so a cached advertisement cannot accidentally authorize a repeated command after a Home Assistant reload. It reports an error if it has not received a fresh frame or no ESPHome action is available, and it serializes commands with a 2.1-second minimum interval between transmissions.
 

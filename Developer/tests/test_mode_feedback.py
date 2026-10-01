@@ -222,8 +222,10 @@ def test_real_sender_uses_fresh_counter_and_skips_superseded_commands(monkeypatc
 
         hass.services = SimpleNamespace(
             async_services_for_domain=lambda _domain: {"fixture_ld2401_control_broadcast": {}},
+            has_service=lambda domain, service: domain == 'esphome' and service == 'fixture_ld2401_control_broadcast',
             async_call=call,
         )
+        value._configured_action = ['esphome', 'fixture_ld2401_control_broadcast']
         feed(value, 8193)
         first = asyncio.create_task(value.async_select_mode(0))
         await asyncio.sleep(0)

@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import timedelta
 import logging
+import math
 import time
 
 from homeassistant.components import bluetooth
@@ -26,11 +28,21 @@ from .const import (
     ESPHOME_DOMAIN,
     MODE_SETTLE_TIME,
     RUNTIME_CHECK_INTERVAL,
+    SENDER_MAX_AGE,
+    SENDER_RSSI_HYSTERESIS,
+    SENDER_TIME_HYSTERESIS,
 )
 from .mirror import find_bthome_entry
 from .shared import subscribe_updates
 
 _LOGGER = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True, slots=True)
+class _SenderCandidate:
+    action: tuple[str, str]
+    rssi: int
+    received: float
 
 
 def _normalise_node_name(value: str) -> str:
@@ -68,6 +80,7 @@ class LD2401ControlManager:
         # An explicitly configured action; empty means pick automatically.
         self._configured_action = action.split(".", 1) if action else None
         self._last_source: str | None = None
+        self._last_sender_action: tuple[str, str] | None = None
         self.frames = BTHomeFrames(bindkey)
         self._last_received = 0.0
         self._last_sent_counter = 0
@@ -230,9 +243,8 @@ class LD2401ControlManager:
     def _async_resolve_action(self) -> tuple[str, str] | None:
         """Return the ESPHome action to broadcast through.
 
-        A configured action wins while the service exists. Otherwise the nodes
-        offering the control action are ranked by who is currently hearing the
-        radar, so the frame is sent from where it is received.
+        A configured action wins while the service exists. Automatic routing
+        uses recent per-scanner reception, RSSI, then time and hysteresis.
         """
         if self._configured_action is not None:
             domain, service = self._configured_action
@@ -247,9 +259,6 @@ class LD2401ControlManager:
         candidates = _control_action_candidates(self.hass)
         if not candidates:
             return None
-        if len(candidates) == 1:
-            return candidates[0]
-
         actions_by_node = {
             _normalise_node_name(service[: -(len(ESPHOME_ACTION_SUFFIX) + 1)]): (domain, service)
             for domain, service in candidates
@@ -258,26 +267,48 @@ class LD2401ControlManager:
         # ESPHome's device_info.name; name is a decorated display string such
         # as "node-name (AA:BB:CC:DD:EE:FF)", and source is the proxy's MAC.
         devices = bluetooth.async_scanner_devices_by_address(self.hass, self.address, False)
-        devices = sorted(
-            devices,
-            key=lambda device: (
-                device.scanner.source == self._last_source,
-                device.advertisement.rssi,
-            ),
-            reverse=True,
-        )
+        now = time.monotonic()
+        receivers: list[_SenderCandidate] = []
         for device in devices:
+            action = None
             for value in (getattr(device.scanner, 'adapter', None), device.scanner.name):
-                if value and (action := actions_by_node.get(_normalise_node_name(value))):
-                    return action
-        if self._last_source and (action := actions_by_node.get(_normalise_node_name(self._last_source))):
-            return action
-        _LOGGER.warning(
-            "No receiving ESPHome sender matched %s; using fallback action %s.%s. "
-            "Set a specific action in reconfigure if this node cannot reach the radar.",
-            self.address, *candidates[0],
+                if value and (action := actions_by_node.get(_normalise_node_name(value))) is not None:
+                    break
+            if action is None:
+                continue
+            # Public per-address timestamps share HA's monotonic clock. A
+            # scanner-wide last-detection time could belong to another device.
+            received = getattr(device.scanner, 'discovered_device_timestamps', {}).get(self.address)
+            rssi = device.advertisement.rssi
+            if (
+                not isinstance(received, (int, float))
+                or not math.isfinite(received)
+                or not 0 <= now - received <= SENDER_MAX_AGE
+                or not isinstance(rssi, (int, float))
+                or not math.isfinite(rssi)
+            ):
+                continue
+            receivers.append(_SenderCandidate(action, rssi, received))
+        if not receivers:
+            raise HomeAssistantError(
+                "No ESPHome sender has received this radar within the last "
+                f"{SENDER_MAX_AGE:g} seconds. Check Bluetooth reception, or set "
+                "a specific action in the integration's reconfigure flow."
+            )
+
+        strongest = max(receiver.rssi for receiver in receivers)
+        close = [receiver for receiver in receivers if strongest - receiver.rssi <= SENDER_RSSI_HYSTERESIS]
+        # Stable action-name ordering resolves identical RSSI/timestamp ties.
+        close.sort(key=lambda receiver: receiver.action)
+        chosen = max(close, key=lambda receiver: (receiver.received, receiver.rssi))
+        previous = next((receiver for receiver in close if receiver.action == self._last_sender_action), None)
+        if previous is not None and chosen.received - previous.received <= SENDER_TIME_HYSTERESIS:
+            chosen = previous
+        _LOGGER.debug(
+            "Automatic sender for %s: %s.%s RSSI=%s age=%.1fs",
+            self.address, *chosen.action, chosen.rssi, now - chosen.received,
         )
-        return candidates[0]
+        return chosen.action
 
     def start(self) -> None:
         """Listen to cached and live advertisements from Home Assistant's BLE manager."""
@@ -417,6 +448,7 @@ class LD2401ControlManager:
                 raise HomeAssistantError(
                     "Home Assistant could not call the ESPHome broadcast action."
                 ) from err
+            self._last_sender_action = action
             await asyncio.sleep(ESP_ACTION_TIME)
 
     async def async_select_mode(self, mode: int) -> None:

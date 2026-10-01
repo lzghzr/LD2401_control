@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.2
+
+- Select automatic ESPHome senders from per-radar receptions within 30 seconds, then compare RSSI.
+- Within a 3 dB signal band, use reception time and retain the previous sender if its reception lags by at most five seconds.
+- Report an error when no recent matching sender exists; explicit configured actions keep priority.
+- Add stale-cache, near-equal signal, hysteresis and real scanner API regression checks.
+
 ## 1.1.1
 
 - Match ESPHome actions to the scanner's node identity when choosing among multiple senders.

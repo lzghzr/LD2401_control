@@ -24,17 +24,17 @@
     {
       "path": "custom_components/ld2401_control/const.py",
       "sha256": "e0944bf067de4626c7072a1cd6ac0e1701f6b97d7a43dd5eb70a880b9f0024d3",
-      "distribution_sha256": "bf6b123032388453c21549a97760be65c34db334a3651c6116fb0ab0c0c20a5c"
+      "distribution_sha256": "6dc4e71531e5ecde9a3185ce766c84abc51ed27b28a23961e6e74aa9d59417a0"
     },
     {
       "path": "custom_components/ld2401_control/coordinator.py",
       "sha256": "2cc9d926598dda1cd9c301d9de88b38a55f06656b0b1fd6719b32e500e5293f5",
-      "distribution_sha256": "718d79e2f2978a8ba152f189cc3b4fa8a95d4ab4778a2d1c7960834db5559c28"
+      "distribution_sha256": "a432e60381b37406dc525cc18de7c3235a5e0a8f8dc3c9a0d1abb96c5d45d981"
     },
     {
       "path": "custom_components/ld2401_control/manifest.json",
       "sha256": "98deb34a9fd1f1ac5d323ae9488319fedda12df56668d763cd2bbfcf29b7657d",
-      "distribution_sha256": "75bb307de8b1cf27ff4137c4922994c40fe75e32ec58aa0df5d5115deabf3ed0"
+      "distribution_sha256": "289d3e4de3be8ed5fc672ee9dc836365eea448cd8c7d2a8b84278c0242c9021b"
     },
     {
       "path": "custom_components/ld2401_control/mirror.py",

@@ -1,7 +1,7 @@
 {
   "domain": "ld2401_control",
   "name": "HLK LD2401 OUT Control",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "bluetooth": [
     {
       "connectable": false,

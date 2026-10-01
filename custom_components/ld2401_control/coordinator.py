@@ -83,6 +83,7 @@ class LD2401ControlManager:
         self._requested_mode: int | None = None
         self._request_counter: int | None = None
         self._request_deadline: float | None = None
+        self._request_action: tuple[str, str] | None = None
         self._selection_id = 0
         self._stopped = False
 
@@ -128,6 +129,21 @@ class LD2401ControlManager:
         self._requested_mode = None
         self._request_counter = None
         self._request_deadline = None
+        self._request_action = None
+
+    @callback
+    def _expire_request(self) -> None:
+        if self._request_deadline is None or time.monotonic() < self._request_deadline:
+            return
+        if self.frames.mode != self._requested_mode:
+            _LOGGER.warning(
+                "OUT mode feedback did not converge for %s: requested=%s observed=%s "
+                "action=%s counter=%s",
+                self.address, self._requested_mode, self.frames.mode,
+                '.'.join(self._request_action) if self._request_action else 'unknown',
+                self._request_counter,
+            )
+        self._clear_request()
 
     @callback
     def _accepted_frame(self, source: str | None = None) -> None:
@@ -143,8 +159,8 @@ class LD2401ControlManager:
             and self.frames.mode == self._requested_mode
         ):
             self._clear_request()
-        elif self._request_deadline is not None and time.monotonic() >= self._request_deadline:
-            self._clear_request()
+        else:
+            self._expire_request()
         self._notify_state()
 
     @callback
@@ -196,10 +212,7 @@ class LD2401ControlManager:
     def _runtime_tick(self, _now) -> None:
         self._refresh_bindkey()
         self._ensure_shared()
-        if self._request_deadline is not None and time.monotonic() >= self._request_deadline:
-            if self.frames.mode != self._requested_mode:
-                _LOGGER.warning("OUT mode feedback did not converge for %s", self.address)
-            self._clear_request()
+        self._expire_request()
         self._notify_state()
 
     def _current_bindkey(self) -> bytes:
@@ -237,23 +250,33 @@ class LD2401ControlManager:
         if len(candidates) == 1:
             return candidates[0]
 
-        heard: set[str] = set()
-        for connectable in (True, False):
-            for device in bluetooth.async_scanner_devices_by_address(
-                self.hass, self.address, connectable
-            ):
-                for value in (device.scanner.name, device.scanner.source):
-                    if value:
-                        heard.add(_normalise_node_name(value))
-        if self._last_source:
-            heard.add(_normalise_node_name(self._last_source))
-
-        for domain, service in candidates:
-            node_name = _normalise_node_name(
-                service[: -(len(ESPHOME_ACTION_SUFFIX) + 1)]
-            )
-            if node_name in heard:
-                return domain, service
+        actions_by_node = {
+            _normalise_node_name(service[: -(len(ESPHOME_ACTION_SUFFIX) + 1)]): (domain, service)
+            for domain, service in candidates
+        }
+        # connectable=False includes all HA scanners. The scanner's adapter is
+        # ESPHome's device_info.name; name is a decorated display string such
+        # as "node-name (AA:BB:CC:DD:EE:FF)", and source is the proxy's MAC.
+        devices = bluetooth.async_scanner_devices_by_address(self.hass, self.address, False)
+        devices = sorted(
+            devices,
+            key=lambda device: (
+                device.scanner.source == self._last_source,
+                device.advertisement.rssi,
+            ),
+            reverse=True,
+        )
+        for device in devices:
+            for value in (getattr(device.scanner, 'adapter', None), device.scanner.name):
+                if value and (action := actions_by_node.get(_normalise_node_name(value))):
+                    return action
+        if self._last_source and (action := actions_by_node.get(_normalise_node_name(self._last_source))):
+            return action
+        _LOGGER.warning(
+            "No receiving ESPHome sender matched %s; using fallback action %s.%s. "
+            "Set a specific action in reconfigure if this node cannot reach the radar.",
+            self.address, *candidates[0],
+        )
         return candidates[0]
 
     def start(self) -> None:
@@ -374,6 +397,11 @@ class LD2401ControlManager:
             self._last_sent_counter = counter
             if self._requested_mode == mode:
                 self._request_counter = counter
+                self._request_action = action
+            _LOGGER.debug(
+                "Sending OUT mode %s for %s via %s.%s with counter %s",
+                mode, self.address, action_domain, action_service, counter,
+            )
             try:
                 await self.hass.services.async_call(
                     action_domain,

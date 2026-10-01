@@ -96,11 +96,29 @@ module(
     PassiveBluetoothDataProcessor=PassiveBluetoothDataProcessor,
     PassiveBluetoothDataUpdate=PassiveBluetoothDataUpdate,
 )
-module("homeassistant.config_entries", ConfigEntryState=ConfigEntryState)
+module("homeassistant.config_entries", ConfigEntryState=ConfigEntryState, ConfigEntry=types.SimpleNamespace)
 module("homeassistant.core", HomeAssistant=object, callback=callback)
 module("homeassistant.exceptions", HomeAssistantError=HomeAssistantError)
 module("homeassistant.helpers")
 module("homeassistant.helpers.event", async_track_time_interval=lambda *_a: lambda: None)
+
+
+class SelectEntityBoundary:
+    """Host lifecycle boundary; tests execute the actual integration entity."""
+
+    async def async_added_to_hass(self):
+        pass
+
+    def async_on_remove(self, cancel):
+        self.cancel_listener = cancel
+
+    def async_write_ha_state(self):
+        self.written_states.append((self.current_option, self.available))
+
+
+module('homeassistant.components.select', SelectEntity=SelectEntityBoundary)
+module('homeassistant.helpers.device_registry', CONNECTION_BLUETOOTH='bluetooth', DeviceInfo=dict)
+module('homeassistant.helpers.entity_platform', AddConfigEntryEntitiesCallback=Callable)
 
 package = module("ld2401_fixture")
 package.__path__ = [str(ROOT / "custom_components/ld2401_control")]
@@ -108,6 +126,7 @@ module("ld2401_fixture.mirror", find_bthome_entry=lambda hass, _address: hass.bt
 frames_module = importlib.import_module("ld2401_fixture.bthome")
 shared_module = importlib.import_module("ld2401_fixture.shared")
 manager_module = importlib.import_module("ld2401_fixture.coordinator")
+select_module = importlib.import_module('ld2401_fixture.select')
 
 
 def coordinator(parser):

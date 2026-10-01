@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.1
+
+- Match ESPHome actions to the scanner's node identity when choosing among multiple senders.
+- Prefer the last authenticated reception source, then the strongest receiving scanner.
+- Report feedback timeouts from both advertisement callbacks and periodic checks.
+- Add three-node routing and select-entity command/feedback regression checks.
+
 ## 1.1.0
 
 - OUT mode select with immediate selection and authenticated broadcast synchronization.

@@ -27,6 +27,11 @@ immediate selection, state-notification filtering, send failure, reconciliation,
 and superseded queued selections. No Bluetooth adapter is opened.
 Shared-parser checks assert authentication status, accepted/rejected updates and
 the absence of a fallback parser; they do not wrap private decryption methods.
+The select-entity checks execute the integration's real select and manager
+methods, including command signing, three-node sender routing and authenticated
+feedback. HA host services and the radio endpoint are synthetic; the installed
+Bluetooth library supplies the real scanner display-name formatter. These
+checks cover the routing regression without claiming a running HA/UI test.
 
 For additional interface validation, save the official HA release's
 `homeassistant/components/bluetooth/passive_update_processor.py` in a local ignored

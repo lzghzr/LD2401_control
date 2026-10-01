@@ -3,3 +3,5 @@ pyserial>=3.5
 cryptography>=42
 # ESPHome BLE proxy capture and control-frame sending (Tester device tools)
 aioesphomeapi>=45.12
+# Home Assistant REST/WebSocket access for the live-instance test loop
+aiohttp>=3.9

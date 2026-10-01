@@ -27,7 +27,7 @@
     {
       "path": "Auditor/tools/selftest.py",
       "origin": "Created for the public role toolkit",
-      "distribution_sha256": "68089aac5a5a7eefda4d98ef559647091063979736aab34b17679d5ea4b1639a"
+      "distribution_sha256": "c2ee13957a14b1c00ad0b4bc18301888d3aae27132f2931d6ff62b4f45f1afec"
     },
     {
       "path": "Auditor/tools/reproduce_candidate.py",
@@ -38,6 +38,11 @@
       "path": "Auditor/tools/ha_feedback_check.py",
       "origin": "Created for the public role toolkit; needs bthome-ble only when it runs",
       "distribution_sha256": "951d2b824e2849817c026b2d4a058cb1ee0ca67911eb88c6950bcf89a3eb908f"
+    },
+    {
+      "path": "Auditor/tools/ha_routing_check.py",
+      "origin": "Created for the public role toolkit; needs bluetooth_adapters and cryptography when it runs",
+      "distribution_sha256": "6da01f10dd9bc3c0b7598af2f9cc286d74593d5a80d5a4cb606c402a206498af"
     },
     {
       "path": "Tester/tools/capture_ble.py",
@@ -68,6 +73,21 @@
       "path": "Tester/tools/send_control.py",
       "origin": "Created for the public role toolkit",
       "distribution_sha256": "fb69854d1b79267b60596e4f7ccb48dad8923ca8fc71f5493e56c72d1ee91e41"
+    },
+    {
+      "path": "Tester/tools/ha_probe.py",
+      "origin": "Created for the public role toolkit; needs a local HA credential file",
+      "distribution_sha256": "11a05f8a2638d631a610d46f01e77fa597b436c1e928b1ad5030b12f1c9882c6"
+    },
+    {
+      "path": "Tester/tools/ha_deploy.py",
+      "origin": "Created for the public role toolkit; needs the ha_file_explorer integration",
+      "distribution_sha256": "8d4ae32b96f3c8064c11c1d612e9cc6bec8379403380a7dfbb4ac75e67243055"
+    },
+    {
+      "path": "Tester/tools/ha_out_test.py",
+      "origin": "Created for the public role toolkit; needs a local HA credential file and an ESPHome proxy",
+      "distribution_sha256": "26c9ca660fa2b41577879e7a7b04e4f840cbecf5640b3963b8507b19f6dbe7d2"
     }
   ]
 }

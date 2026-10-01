@@ -40,9 +40,23 @@ def main():
         assert xref.branch_target(*rows[1]) == (0x100E, 'call')
         assert xref.branch_target(0x1002, bytes(4), 'call 8 <target : 100e >') == (0x100E, 'call')
         assert xref.branch_target(0x1002, bytes(4), 'goto -2 <target : 1004 >') == (0x1004, 'goto')
+        # Immediate operands are read in both listing notations; neither a branch
+        # annotation nor a comparison may be reported as an immediate load.
+        assert xref.immediate_loads('r0 = 17684 <hooks.s.o+0x4514 : 4514 >') == [17684]
+        assert xref.immediate_loads('r4 = 0x1e5000 <hooks.s.o+0x1E5000 : 1e5000 >') == [0x1e5000]
+        assert xref.immediate_loads('if (r0 != 0x1e5000) goto 4 <x : 1e5000 >') == []
+        assert xref.immediate_loads('sp += -20') == []
         subprocess.run([sys.executable, '-B', str(HERE / 'q32s_xref.py'),
                         '--asm', str(listing), 'callers', '0x100e'], cwd=directory,
                        stdout=subprocess.DEVNULL, check=True)
+        refs = Path(directory) / 'refs.asm'
+        refs.write_text('1000: 00 fb 14 45 \tr0 = 17684 <hooks.s.o+0x4514 : 4514 >\n'
+                        '1004: 00 fb 15 45 \tr1 = 17685 <hooks.s.o+0x4515 : 4515 >\n'
+                        '1008: 20 f3 33 60 \tif ((r6 & 1) != 0) goto 2\n', encoding='utf-8')
+        result = subprocess.check_output([sys.executable, '-B', str(HERE / 'q32s_xref.py'),
+                                          '--asm', str(refs), 'refs', '0x4514'],
+                                         cwd=directory, text=True)
+        assert '17684' in result and '1 immediate load(s) of 0x4514' in result, result
         table = Path(directory) / 'table.asm'
         table.write_text('1006: 02 00 \tdata\n', encoding='utf-8')
         result = subprocess.check_output([sys.executable, '-B', str(HERE / 'q32s_xref.py'),
@@ -50,7 +64,8 @@ def main():
                                           '--base', '0x1008', '--count', '1'],
                                          cwd=directory, text=True)
         assert '0x100c' in result
-        for tool in ('fw_audit.py', 'q32s_xref.py'):
+        for tool in ('fw_audit.py', 'q32s_xref.py', 'reproduce_candidate.py',
+                     'ha_feedback_check.py'):
             subprocess.run([sys.executable, '-B', str(HERE / tool), '--help'],
                            cwd=directory, stdout=subprocess.DEVNULL, check=True)
     print('PASS: Auditor local imports, CRC/header rejection, Q32S fixture, CLI entries')

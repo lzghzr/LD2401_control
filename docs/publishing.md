@@ -7,7 +7,7 @@
 3. 在 GitHub 创建公开仓库，推送源码，设置说明与 topics（例如 `home-assistant`、`hacs`、`bthome`、`esphome`、`ld2401`）。
 4. 配置 CONTRIBUTING 中的分支保护、PR 和 `repository-check` 必需检查。
 5. 如要发布固件附件，另行确认原厂固件衍生包的分发许可。源码交付可从 commit 用 `git archive` 导出，避免把本地构建和设备日志打包。
-6. 对集成发布版本，保持 GitHub Release、标签和 `custom_components/ld2401_control/manifest.json` 一致（当前 1.0.0）；固件 Build ID 单独保留 26092430。
+6. 对集成发布版本，保持 GitHub Release、标签和 `custom_components/ld2401_control/manifest.json` 一致（当前 1.1.0）。固件交付身份为 Build ID `26092431-mode-feedback-r1`，其 commit 与 UFW SHA-256 由该提交的 release 构建报告绑定；26092430 保留为构建器强制匹配的固定哈希复现基线。
 
 HACS 的仓库布局与 manifest 必需字段已配置。正式 HACS 收录还需核对 [HACS 发布要求](https://www.hacs.dev/docs/publish/integration/)，包括 Home Assistant Brands 的品牌资源；该外部资源与服务器分支规则不由本地文件自动完成。
 

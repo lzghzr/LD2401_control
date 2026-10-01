@@ -26,7 +26,7 @@ Candidate 26092431 adds generic boolean (`0x0F`) from the stock manual-hold byte
 
 The BTHome object stream includes illuminance (`0x05`), OUT as a one-byte binary/power object (`0x10`), motion (`0x21`), occupancy (`0x23`), voltage (`0x0C`), and distance (`0x40`). With a valid radar snapshot, the frame alternates voltage and distance by counter parity to fit the legacy advertisement limit. Without a valid snapshot, voltage remains present each frame. The source calculations are in `build_live()` in `payload.c`; preserve those encodings when updating the object map.
 
-The advertising firmware-version bytes and UART `A0` version stamp are patched from the same version string by the builder. The current build pins the version family to `260924xx` because one advertising byte is shared with the factory company identifier.
+The advertising firmware-version bytes and UART `A0` version stamp are patched from the same version string by the builder. The current build pins the version family to `260924xx` because one advertising byte is shared with the factory company identifier. Both stamps hold the same byte order in the image; on air the advertising field is emitted as two little-endian 16-bit words, so a byte-for-byte comparison against the `A0` stamp looks swapped (`24 31 26 09` versus `31 24 09 26`). See [broadcast protocol](protocol.md) for the scan-response layout.
 
 ## Key and counter state
 

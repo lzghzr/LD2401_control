@@ -17,7 +17,7 @@
       "path": "Auditor/tools/q32s_xref.py",
       "source": "Auditor/tools/q32s_xref.py",
       "sha256": "8ea1ea8abfe3e274240d388711cfca7e2afa850ef301b05e1f58da173b2b079c",
-      "distribution_sha256": "d081eea9832edc2ebe1be369dcdf8a099f73c12cb69edfd0a531dbd2b38f13d9"
+      "distribution_sha256": "dd5e6d461549ce332b59a0f4a47df8e5e3537dc561e537482aac8700e8aebd67"
     },
     {
       "path": "Auditor/tools/_paths.py",
@@ -27,7 +27,17 @@
     {
       "path": "Auditor/tools/selftest.py",
       "origin": "Created for the public role toolkit",
-      "distribution_sha256": "97868a7fb37039592ba40a43c29b06e83ad9b240482f2468f9346e94366b8da0"
+      "distribution_sha256": "68089aac5a5a7eefda4d98ef559647091063979736aab34b17679d5ea4b1639a"
+    },
+    {
+      "path": "Auditor/tools/reproduce_candidate.py",
+      "origin": "Created for the public role toolkit",
+      "distribution_sha256": "87052171c5db374669d16203db6c8b7984bc76c467172789c76c9f144181e832"
+    },
+    {
+      "path": "Auditor/tools/ha_feedback_check.py",
+      "origin": "Created for the public role toolkit; needs bthome-ble only when it runs",
+      "distribution_sha256": "951d2b824e2849817c026b2d4a058cb1ee0ca67911eb88c6950bcf89a3eb908f"
     },
     {
       "path": "Tester/tools/capture_ble.py",
@@ -37,7 +47,7 @@
     {
       "path": "Tester/tools/decode_capture.py",
       "origin": "Created for the public role toolkit",
-      "distribution_sha256": "dd37b8030c00761c3cc0b16f76f49c96818e082a0cce5f4ec7ed0ea973e96b14"
+      "distribution_sha256": "5cf127c490b7576551ecdb684cc30c205153b1bd525bb1eadded1084ef966a9e"
     },
     {
       "path": "Tester/tools/control_frame.py",
@@ -47,7 +57,17 @@
     {
       "path": "Tester/tools/check_capture.py",
       "origin": "Created for the public role toolkit",
-      "distribution_sha256": "31ae2976e87e534f2c66284df13ff66e58b5e612198351c77b5c71fd9938e863"
+      "distribution_sha256": "0e58a90fb36f9d66c799c08b2ef760ccfb45900c16b06404fc547220caac14ae"
+    },
+    {
+      "path": "Tester/tools/capture_ble_proxy.py",
+      "origin": "Created for the public role toolkit",
+      "distribution_sha256": "9abc9999c3f13d6b62f476c81baf95289fa5e6925b3762d37154ce360897b780"
+    },
+    {
+      "path": "Tester/tools/send_control.py",
+      "origin": "Created for the public role toolkit",
+      "distribution_sha256": "fb69854d1b79267b60596e4f7ccb48dad8923ca8fc71f5493e56c72d1ee91e41"
     }
   ]
 }

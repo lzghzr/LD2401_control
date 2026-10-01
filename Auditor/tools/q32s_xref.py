@@ -9,7 +9,8 @@ Subcommands:
     func <addr>              function that contains <addr> (both prologue forms)
     callers <addr>           call/goto sites that reach <addr>, with their function
     chain <addr> [--depth N] walk `callers` upward N hops (how a feature is entered)
-    refs <addr>              immediate loads of <addr>, plus raw LE32 hits in --bin
+    refs <addr>              immediate load operands of <addr>, decimal or hex, plus raw
+                             LE32 hits in --bin; a low address also matches constants
     sites --range LO HI      every call/goto site in a range and its resolved target
     table <addr> [--base B]  decode a jump table: entries are halfword offsets from the
                              address right after the table branch
@@ -30,8 +31,18 @@ from _paths import project_root, resolve_input  # noqa: E402
 
 ROW = re.compile(r'^\s*([0-9a-f]+):\s+((?:[0-9a-f]{2} )+)\s*\t(.*)$')
 BRANCH = re.compile(r'\b(call|goto) (-?(?:0x[0-9a-f]+|[0-9]+))(?:\s+<[^>]*>)?$')
-IMM = re.compile(r'= 0x([0-9a-f]{5,8})\b')
+# llvm-objdump prints a register-load operand as a decimal number in most cases and as
+# 0x... in others, then appends a "<symbol+0xNN : address >" annotation.  Only the operand
+# is matched: the annotation of a branch is a target, not an immediate load, and matching
+# the bare "= 0x" substring would also read a comparison such as "if (r0 != 0x1e5000)".
+IMM = re.compile(r'\br\d+ = (0x[0-9a-fA-F]+|[0-9]+)\b')
 TABLE_BRANCH = re.compile(r'\btb[hb]\b')
+
+
+def immediate_loads(text):
+    """Integer operands of the register-load instructions on one listing line."""
+    return [int(value, 16) if value[:2].lower() == '0x' else int(value, 10)
+            for value in IMM.findall(text)]
 
 
 def load_rows(path):
@@ -127,8 +138,9 @@ def sub_chain(rows, args):
 
 def sub_refs(rows, args):
     addr = int(args.target, 16)
-    hits = [(at, text) for at, _blob, text in rows
-            if any(int(v, 16) == addr for v in IMM.findall(text))]
+    # Both listing notations are read.  A low address can also equal an ordinary constant
+    # (an object size, a mask), so each hit is a candidate to judge, not a proven pointer.
+    hits = [(at, text) for at, _blob, text in rows if addr in immediate_loads(text)]
     for at, text in hits:
         print('%s  %s' % (hex(at), text))
     print('%d immediate load(s) of %s' % (len(hits), hex(addr)))

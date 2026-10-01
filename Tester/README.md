@@ -13,9 +13,15 @@ Tester 维护 `tools/a6.py`（串口配置、版本与密钥读写）和 `tools/
 | `tools/a6.py` | UART 版本、OUT、读取 / 重置 Bindkey | pyserial；自检只需标准库 |
 | `tools/jl_ota_pc.py` | PC BLE OTA，操作前核对候选身份 | bleak |
 | `tools/capture_ble.py` | 主动扫描指定 MAC，保存带时间戳的原始广播字段 | bleak |
-| `tools/decode_capture.py` | 离线验证 AES-CCM，解码照度、运动、占用、OUT、电压和距离，统计 counter | cryptography |
+| `tools/capture_ble_proxy.py` | 经 ESPHome BLE 代理采集广播；保留原始 AD 字节，可测空口帧长 | aioesphomeapi |
+| `tools/decode_capture.py` | 离线验证 AES-CCM，解码照度、运动、占用、手动保持、OUT、电压和距离，统计 counter 速率 | cryptography |
 | `tools/control_frame.py` | 用近期认证广播的 counter 生成 30 字节控制帧 | cryptography、Developer 的协议 codec |
-| `tools/check_protocol.py`、`tools/check_capture.py` | 合成协议对比、交替载荷解码、错误 MIC 与时效检查 | cryptography |
+| `tools/send_control.py` | 把已签名控制帧交给已部署的 ESPHome 动作广播，并回报结果 | aioesphomeapi |
+| `tools/check_protocol.py`、`tools/check_capture.py` | 合成协议对比、各代明文布局解码、错误 MIC 与时效检查 | cryptography |
+
+主机适配器可能只交付 500 ms 广播流的一部分，因此 `decode_capture.py` 另报 `timeline`：由首个与末个认证 counter 的差与时间跨度算出真实节拍（主机漏报不影响该值），并检查 counter 单调。`capture_ble_proxy.py` 用 ESPHome 代理后端补足覆盖率，其 `raw`/`ad_bytes` 字段给出空口 AD 长度。
+
+扫描模式决定代理能看到什么：ESPHome `bluetooth_proxy` 默认是**被动**扫描（`active: false`），不发 SCAN_REQ，因此代理看不到模块的扫描响应（设备名与版本厂商段都在其中），`ad_bytes` 只覆盖广播本身；节点若配成主动扫描，代理会把扫描响应并入同一条原始数据，此时 `ad_bytes` 覆盖两段。需要设备名或只测广播长度时用 `capture_ble.py` 的主动扫描。
 
 Tester 的软件自检由工具维护者运行，硬件操作按测试任务授权执行。`control_frame.py` 调用正式协议 codec 来生成输入；`decode_capture.py` 自行读取和认证广播，作为测试观测工具。Auditor 的静态核验入口见 [Auditor](../Auditor/README.md)。
 
@@ -29,6 +35,13 @@ python -B Tester/tools/decode_capture.py --capture local/capture-001.json --key-
 python -B Tester/tools/control_frame.py --mac 02:00:00:00:00:01 --key-file local/bindkey.txt --capture local/capture-001.json --mode 1
 ```
 
+需要代理后端时，采集与发送改为（节点地址与 API 密钥只放在本地忽略文件）：
+
+```text
+python -B Tester/tools/capture_ble_proxy.py --host <节点> --apikey-file local/esphome.key --mac 02:00:00:00:00:01 --seconds 30 --output local/capture-002.json
+python -B Tester/tools/send_control.py --host <节点> --apikey-file local/esphome.key --payload <60 位 HEX>
+```
+
 把生成的十六进制数据交给已部署的 ESPHome `ld2401_control_broadcast` 动作，参数为 `payload`，调用方式见 [HA 使用文档](../docs/home-assistant.md)。生成工具只打印数据，不发送广播。模式 `0/1/2` 对应低、高、自动。工具采用最近 50 秒内认证成功的广播 counter，给模块 120 拍的窗口留出发送时间；仍须及时发送，且一个 counter 只能执行一次。再次控制前采集新广播。专家测试可显式传 `--counter 8192`，由操作者检查其有效性。
 
 对照下一帧解密后的 `out_high` 和实际 OUT 电平，记录手动低 / 高 / 自动、重发同 counter、错误认证、错误目标和过期 counter 的结果。广播采集得到的是操作系统交付的字段，可能合并扫描响应或过滤重复报告；counter 统计表示主机观测速率，不能代替空口射频测量。日志包含设备标识，解密日志还包含遥测信息，都保存在 Git 忽略的本地目录，公开报告须脱敏。OTA 或恢复出厂后重新确认密钥。
@@ -39,4 +52,4 @@ python -B Tester/tools/control_frame.py --mac 02:00:00:00:00:01 --key-file local
 python -B Tester/tools/check_capture.py
 ```
 
-26092430 已由用户确认测试，详细覆盖未在本仓库导入记录。本目录用于后续候选的可追溯测试记录。
+26092430 已由用户确认测试，详细覆盖未在本仓库导入记录。26092431 的实机测试记录见 [reports/26092431-mode-feedback-r1.md](reports/26092431-mode-feedback-r1.md)。

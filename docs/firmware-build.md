@@ -44,7 +44,7 @@ python -B Developer/tools/build.py --version 26092430 --output-dir build/reprodu
 7e74ed708e109bbd721371a2b74244ea52743be85e9b251198cecdf1f23add7d
 ```
 
-`--version 26092430` 强制此哈希，确认源码与工具链生成已测试的精确参考文件。26092431 候选也固定其 SHA-256，身份见 [候选记录](../metadata/firmware-26092431.json)。工具链三个可执行文件均校验已验证哈希。正式候选使用独立 Build ID，例如 `--build-id 26092431-mode-feedback-r1 --output-dir build/26092431-mode-feedback-r1 --release`；新候选的独立审计与实机验证需另行记录。构建输出与本机路径报告保存在本地，不放入公开源码归档。
+`--version 26092430` 强制此哈希，确认源码与工具链生成已测试的精确参考文件。26092431 交付固件也固定其 SHA-256，身份见 [交付记录](../metadata/firmware-26092431.json)。工具链三个可执行文件均校验已验证哈希。正式交接使用独立 Build ID 与独立输出目录，例如 `--build-id 26092431-mode-feedback-r1 --output-dir build/26092431-mode-feedback-r1 --release`；交付固件与工具链字节未变、仅从新的干净 commit 复现时沿用同一 Build ID，并用新的空输出目录重建 release 报告以绑定该 commit。构建输出与本机路径报告保存在本地，不放入公开源码归档。
 
 ## 刷写与读取密钥
 

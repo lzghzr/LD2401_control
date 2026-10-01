@@ -29,10 +29,15 @@
     }
   },
   "entity": {
-    "button": {
-      "out_low": {"name": "Hold OUT low"},
-      "out_high": {"name": "Hold OUT high"},
-      "out_auto": {"name": "Return OUT to auto"}
+    "select": {
+      "out_mode": {
+        "name": "OUT mode",
+        "state": {
+          "auto": "Automatic",
+          "hold_low": "Hold low",
+          "hold_high": "Hold high"
+        }
+      }
     }
   }
 }

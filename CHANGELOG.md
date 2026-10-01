@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0
+
+- OUT mode select with immediate selection and authenticated broadcast synchronization.
+- Shared parsing through the built-in BTHome runtime, with automatic local fallback.
+- Firmware 2.50.26092431 candidate adds manual-hold feedback within the 31-byte legacy frame.
+- Key epochs, BTHome reloads, stale feedback and failed sends are handled explicitly.
+- Upgrade automations from the removed three buttons to `select.select_option`.
+- Fixed-hash 26092430 reproduction remains available with `--version 26092430`.
+
 ## 1.0.0
 
 - Encrypted BTHome telemetry through the built-in Home Assistant integration.

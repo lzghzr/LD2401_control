@@ -1,4 +1,4 @@
-"""Reproduce the final LD2401 26092430 image from its pinned factory base."""
+"""Build versioned LD2401 candidates from the pinned factory base."""
 import argparse
 import hashlib
 import json
@@ -26,10 +26,13 @@ STOCK_SHA = '3e518750921f9392eb71da0becc641915d4204376f7eb571c54ed4f586bab9a7'
 sha = lambda b: hashlib.sha256(b).hexdigest()
 
 EXPECTED_SHA = '7e74ed708e109bbd721371a2b74244ea52743be85e9b251198cecdf1f23add7d'
-ap = argparse.ArgumentParser(description='Reproduce LD2401 2.50.26092430 (JieLi Q32S).')
+CANDIDATE_SHA = '367df6fde866918147b5ad5e61257e0cc8db00fecd872a2a6390885b9565872a'
+ap = argparse.ArgumentParser(description='Build LD2401 firmware (JieLi Q32S).')
+ap.add_argument('--version', choices=('26092430', '26092431'), default='26092431')
+ap.add_argument('--build-id', help='Candidate identity recorded in the build report')
 ap.add_argument('--stock', type=Path, default=BASE_IN, help='Pinned factory UFW input')
 ap.add_argument('--toolchain', type=Path, default=BIN, help='Directory containing Q32S tools')
-ap.add_argument('--output-dir', type=Path, default=ROOT / 'build/26092430')
+ap.add_argument('--output-dir', type=Path, help='An empty candidate output directory')
 ap.add_argument('--check-inputs', action='store_true', help='Validate inputs without compiling')
 ap.add_argument('--release', action='store_true', help='Require a clean Git commit for handoff')
 args = ap.parse_args()
@@ -37,7 +40,9 @@ if not __debug__:
     ap.error('Run normal Python; -O disables required assertions')
 BASE_IN = args.stock.resolve()
 BIN = args.toolchain.resolve()
-WORK = args.output_dir.resolve()
+VERSION = args.version
+BUILD_ID = args.build_id or VERSION
+WORK = (args.output_dir or ROOT / 'build' / BUILD_ID).resolve()
 for protected in ('Developer', 'Auditor', 'Tester', 'custom_components', 'esphome',
                   'metadata', 'docs', 'tools', 'third_party', '.github'):
     if (ROOT / protected).resolve() in (WORK, *WORK.parents):
@@ -52,6 +57,10 @@ if sha(BASE_IN.read_bytes()) != STOCK_SHA:
 for executable in ('clang.exe', 'q32s-ld.exe', 'llvm-objdump.exe'):
     if not (BIN / executable).is_file():
         ap.error('Missing Q32S tool: ' + str(BIN / executable))
+tool_hashes = json.loads((ROOT / 'metadata/firmware-26092430.json').read_text())['toolchain_sha256s']
+for executable, expected in tool_hashes.items():
+    if sha((BIN / executable).read_bytes()) != expected:
+        ap.error('Q32S tool hash differs from the verified toolchain: ' + executable)
 try:
     commit = subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'],
                                      text=True, stderr=subprocess.DEVNULL).strip()
@@ -65,18 +74,20 @@ except (subprocess.CalledProcessError, FileNotFoundError, ValueError):
 if args.release and (not commit or dirty):
     ap.error('Release builds require this repository to have a clean committed source tree')
 if args.check_inputs:
-    print(json.dumps({'version': '26092430', 'input_sha256': STOCK_SHA,
+    print(json.dumps({'version': VERSION, 'build_id': BUILD_ID, 'input_sha256': STOCK_SHA,
                       'tools_found': True, 'git_commit': commit, 'dirty': dirty}))
     raise SystemExit(0)
 if WORK.exists() and any(WORK.iterdir()):
     ap.error('Output directory must be empty; preserve previous build artifacts')
 WORK.mkdir(parents=True, exist_ok=True)
-VERSION = '26092430'
 args.variant = 'plain'
-V = dict(define=None, notes='Encrypted BTHome telemetry and authenticated OUT control; '
+V = dict(define='LD24_OUT_MODE_STATUS' if VERSION == '26092431' else None,
+         notes='Encrypted BTHome telemetry and authenticated OUT control; '
          'random persistent Bindkey, reserved counters, full-width RX context pointer. '
          'Undocumented factory commands remain available.')
-OUTPUT = WORK / 'LD2401_2.50_26092430.ufw'
+if V['define']:
+    V['notes'] += ' Manual-hold feedback in every authenticated telemetry frame.'
+OUTPUT = WORK / f'LD2401_2.50_{VERSION}.ufw'
 REPORT = WORK / 'build-report.json'
 
 raw = BASE_IN.read_bytes()
@@ -202,7 +213,10 @@ for kind, alignment in ((0, 4096), (32, 256)):
     assert layouts[kind]['new_vm_start'] == fixed
     assert layouts[kind]['program_end'] <= fixed
 result = repack(raw, replacement)
-assert sha(result) == EXPECTED_SHA, 'Rebuild differs from the tested 26092430 reference'
+if VERSION == '26092430':
+    assert sha(result) == EXPECTED_SHA, 'Rebuild differs from the tested 26092430 reference'
+else:
+    assert sha(result) == CANDIDATE_SHA, 'Rebuild differs from the identified 26092431 candidate'
 assert layouts[0]['new_vm_start'] > layouts[0]['old_vm_start']
 assert layouts[0]['vm_end_preserved'] == states[0]['appfiles'][2]['offset'] + states[0]['appfiles'][2]['size']
 assert len(result) - len(raw) == sum(layouts[k]['new_vm_start'] - layouts[k]['old_vm_start']
@@ -236,7 +250,7 @@ assert non_flash_identical, 'non-flash UFW payload changed'
 assert BASE_IN.read_bytes() == raw
 
 report = dict(
-    variant=args.variant, version=VERSION,
+    variant=args.variant, version=VERSION, build_id=BUILD_ID,
     git_commit=commit, git_dirty=dirty,
     source_sha256s={p.relative_to(ROOT).as_posix(): sha(p.read_bytes())
                    for p in sorted((ROOT / 'Developer').rglob('*')) if p.is_file()},
@@ -253,10 +267,13 @@ report = dict(
                      lock='0x4660', snapshot='heap context + 96', context_bytes=100),
     bthome_payload=dict(
         out_object='0x10', out_source='GPIO register 0x1e5000 bit 0',
-        valid_snapshot_even_counter=['0x05', '0x0c', '0x10', '0x21', '0x23'],
-        valid_snapshot_odd_counter=['0x05', '0x10', '0x21', '0x23', '0x40'],
-        no_snapshot=['0x05', '0x0c', '0x10'],
-        max_plaintext_bytes=13, max_legacy_ad_bytes=29,
+        hold_object='0x0f' if V['define'] else None,
+        hold_source='stock manual hold byte 0x4514' if V['define'] else None,
+        valid_snapshot_even_counter=['0x05', '0x0c'] + (['0x0f'] if V['define'] else []) + ['0x10', '0x21', '0x23'],
+        valid_snapshot_odd_counter=['0x05'] + (['0x0f'] if V['define'] else []) + ['0x10', '0x21', '0x23', '0x40'],
+        no_snapshot=['0x05', '0x0c'] + (['0x0f'] if V['define'] else []) + ['0x10'],
+        max_plaintext_bytes=15 if V['define'] else 13,
+        max_legacy_ad_bytes=31 if V['define'] else 29,
         voltage_distance_alternate=True,
     ),
     patches=patches,
@@ -276,8 +293,8 @@ report = dict(
     limitations=[
         'This build executes structural assertions; independent audit and hardware coverage '
         'are recorded separately for the identified candidate.',
-        'Firmware 26092430 is user-confirmed tested; detailed coverage is not imported '
-        'in metadata/firmware-26092430.json.',
+        'Hardware coverage belongs to the identified version; 26092431 requires '
+        'independent audit and hardware validation.',
         'Read A603 again after OTA or factory reset and update HA when the key changes.',
         'The RX mailbox holds one candidate; senders repeat a signed frame during '
         'their transmit window and observe BTHome physical OUT feedback.',

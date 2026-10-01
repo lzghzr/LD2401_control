@@ -13,7 +13,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install host protocol dependency
-        run: python -m pip install 'cryptography>=42'
+      - name: Install developer check dependencies
+        run: python -m pip install 'cryptography>=42' 'bthome-ble>=3.9.1' pytest
       - name: Check public source tree and protocol parity
         run: python -B tools/check_repository.py --protocol
+      - name: Check authenticated mode feedback and HA runtime boundaries
+        run: python -B -m pytest Developer/tests -q -p no:cacheprovider

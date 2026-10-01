@@ -1,48 +1,92 @@
-"""Read the module's authenticated BTHome frames with the bthome_ble library.
-
-Home Assistant hands every integration the raw advertisement; decryption happens
-in whichever integration holds the Bindkey.  This module reuses ``bthome_ble``,
-the same library the built-in BTHome integration uses, so the frame format,
-CCM authentication, replay filtering and measurement decoding are not
-re-implemented here.  We still need the raw frame because a control frame has to
-carry a counter the module has just broadcast, and the built-in integration does
-not expose it.
-"""
+"""Consume authenticated BTHome updates, with a lazy standalone parser."""
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import Any
+from types import SimpleNamespace
 
-from bthome_ble.parser import BTHomeBluetoothDeviceData
+from bthome_ble.parser import BTHomeBluetoothDeviceData, EncryptionScheme
 
-if TYPE_CHECKING:
-    from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
+from .const import BTHOME_SERVICE_UUID, OUT_MODE_AUTO, OUT_MODE_HIGH, OUT_MODE_LOW
+
+
+def mode_from_update(update: Any) -> int | None:
+    """Use hold and physical level from the same update, never cached entities."""
+    values = {
+        key.key: value.native_value
+        for key, value in update.binary_entity_values.items()
+        if key.device_id is None
+    }
+    hold, level = values.get("generic"), values.get("power")
+    if not isinstance(hold, bool) or not isinstance(level, bool):
+        return None
+    if not hold:
+        return OUT_MODE_AUTO
+    return OUT_MODE_HIGH if level else OUT_MODE_LOW
 
 
 class BTHomeFrames:
-    """Track the newest counter that this Bindkey authenticates."""
+    """Track fresh authenticated counters and OUT modes across parser owners."""
 
     def __init__(self, bindkey: bytes) -> None:
-        """Authenticate frames with this Bindkey."""
-        self._parser = BTHomeBluetoothDeviceData(bindkey=bindkey)
+        self.bindkey = bindkey
+        self._parser: BTHomeBluetoothDeviceData | None = None
         self.counter: int | None = None
+        self.mode: int | None = None
+        self._value_refs: dict = {}
 
     def ensure_bindkey(self, bindkey: bytes) -> None:
-        """Switch keys when the linked BTHome entry rotates theirs."""
-        if self._parser.bindkey != bindkey:
-            self._parser.set_bindkey(bindkey)
+        """A new key starts a new counter epoch and invalidates old feedback."""
+        if self.bindkey != bindkey:
+            self.bindkey = bindkey
+            self._parser = None
+            self.counter = None
+            self.mode = None
+            self._value_refs = {}
 
-    def update(self, service_info: BluetoothServiceInfoBleak) -> bool:
-        """Decode one advertisement; report whether a newer authenticated frame arrived.
-
-        A failed authentication, a duplicate or an out-of-order counter leaves
-        the parser's counter untouched, so comparing it against the last
-        accepted value is what distinguishes a fresh frame from a rejected one.
-        """
-        self._parser.update(service_info)
-        counter = int(self._parser.encryption_counter)
+    def accept(self, parser: Any, update: Any) -> bool:
+        """Read results only after successful encrypted-frame authentication."""
+        if (
+            parser.bindkey != self.bindkey
+            or parser.encryption_scheme != EncryptionScheme.BTHOME_BINDKEY
+            or not parser.bindkey_verified
+            or parser.decryption_failed
+            or getattr(parser, "downgrade_detected", False)
+        ):
+            return False
+        counter = int(parser.encryption_counter)
         if counter <= (self.counter or 0):
             return False
 
+        # SensorUpdate can retain objects omitted from a later frame. Compare
+        # identities, since the parser creates a new value object on each read.
+        fresh_values = {
+            key: value for key, value in update.binary_entity_values.items()
+            if value is not self._value_refs.get(key)
+        }
+        info = parser.last_service_info
+        if info is None:
+            return False
+        payload = next(
+            (data for uuid, data in info.service_data.items() if uuid.lower() == BTHOME_SERVICE_UUID),
+            b"",
+        )
+        if not payload or payload[0] != 0x41 or int.from_bytes(payload[-8:-4], "little") != counter:
+            return False
+        # 26092431 has 11/15 plaintext bytes. Earlier 9/13-byte layouts must
+        # not inherit hold values cached by an already-running parser.
+        mode = (
+            mode_from_update(SimpleNamespace(binary_entity_values=fresh_values))
+            if len(payload) - 9 in (11, 15) else None
+        )
+        self._value_refs = dict(update.binary_entity_values)
         self.counter = counter
+        self.mode = mode
         return True
+
+    def update(self, service_info: Any) -> bool:
+        """Authenticate locally when the shared runtime interface is unavailable."""
+        if self._parser is None:
+            self._parser = BTHomeBluetoothDeviceData(bindkey=self.bindkey)
+        update = self._parser.update(service_info)
+        return self.accept(self._parser, update)

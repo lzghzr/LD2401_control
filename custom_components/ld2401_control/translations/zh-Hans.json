@@ -29,10 +29,15 @@
     }
   },
   "entity": {
-    "button": {
-      "out_low": {"name": "OUT 保持低电平"},
-      "out_high": {"name": "OUT 保持高电平"},
-      "out_auto": {"name": "OUT 恢复自动"}
+    "select": {
+      "out_mode": {
+        "name": "OUT 模式",
+        "state": {
+          "auto": "自动",
+          "hold_low": "保持低电平",
+          "hold_high": "保持高电平"
+        }
+      }
     }
   }
 }

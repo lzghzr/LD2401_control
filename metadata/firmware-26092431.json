@@ -1,0 +1,36 @@
+{
+  "module": "LD2401",
+  "platform": "JieLi Q32S",
+  "target_firmware": "LD2401_2.50.24110415.ufw",
+  "firmware_version": "2.50.26092431",
+  "ha_integration_version": "1.1.0",
+  "factory_filename": "LD2401_2.50.24110415.ufw",
+  "factory_bytes": 598112,
+  "factory_sha256": "3e518750921f9392eb71da0becc641915d4204376f7eb571c54ed4f586bab9a7",
+  "candidate_bytes": 607840,
+  "candidate_sha256": "367df6fde866918147b5ad5e61257e0cc8db00fecd872a2a6390885b9565872a",
+  "build_id": "26092431-mode-feedback-r1",
+  "source": "Developer/src",
+  "builder": "Developer/tools/build.py",
+  "record_type": "candidate; source commit is bound by the clean release build report",
+  "hardware_status": "NOT_TESTED",
+  "independent_audit_status": "PENDING",
+  "coverage": null,
+  "toolchain_sha256s": {
+    "clang.exe": "0ae79bfb1e79018a12f401050674b6ddc90c202bf81a07832e37a73c3a447c25",
+    "q32s-ld.exe": "d279ad52a596138adb3d7a13fe9986fe61843fa2bb1846cf31abdf441a8cb34c",
+    "llvm-objdump.exe": "18c3c29205781c115a12ebc56ed2fdf0d55a95a694778ccce78b48979f1faa86"
+  },
+  "broadcast": {
+    "hold_object": "0x0f",
+    "hold_source": "0x4514",
+    "max_plaintext_bytes": 15,
+    "max_legacy_ad_bytes": 31
+  },
+  "layout": {
+    "vm_start_image0": "0x2f000",
+    "vm_start_image32": "0x2e000",
+    "context_bytes": 100,
+    "tail_end": "0x1e2b114"
+  }
+}

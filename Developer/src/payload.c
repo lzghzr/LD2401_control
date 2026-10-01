@@ -327,7 +327,12 @@ u8 build_frame_impl(u32 counter, const u8 *key, const u8 *plain, u8 n, u8 *out) 
 
 __attribute__((noinline,section(".crypto")))
 u8 build_live(const u8 *key, u32 counter, u32 snapshot, u8 *out) {
+#ifdef LD24_OUT_MODE_STATUS
+  u8 plain[16];
+  u8 hold, level, pos;
+#else
   u8 plain[14];
+#endif
   unsigned s, i, v, st, mm;
   u8 n = 9;
   /* BTHome 0x10 is a one-byte power binary sensor. Read the physical OUT pin,
@@ -369,6 +374,21 @@ u8 build_live(const u8 *key, u32 counter, u32 snapshot, u8 *out) {
     plain[7] = 0x10;
     plain[8] = B(0x1e5000) & 1;
   }
+#ifdef LD24_OUT_MODE_STATUS
+  /* Sample the stock hold flag and physical pin together. A concurrent A6
+     transition can defer a frame rather than report a mixed mode/level. */
+  hold = B(0x4514);
+  level = B(0x1e5000) & 1;
+  if (hold != B(0x4514)) return 0;
+  pos = (n == 13 && (counter & 1)) ? 4 : 7;
+  plain[pos + 1] = level; /* existing 0x10 value */
+  /* Insert generic boolean 0x0f in object-id order, ahead of power 0x10.
+     16 bytes of framing + 15 bytes of plaintext = 31 legacy AD bytes. */
+  for (i = n; i > pos; i--) plain[i + 1] = plain[i - 1];
+  plain[pos] = 0x0f;
+  plain[pos + 1] = hold != 0;
+  n += 2;
+#endif
   return build_frame_impl(counter, key, plain, n, out);
 }
 

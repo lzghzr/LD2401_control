@@ -1,11 +1,9 @@
 """Mirror encrypted devices from the built-in BTHome integration.
 
-The module's encrypted BTHome frames are consumed twice: by the built-in BTHome
-integration (measurement entities) and by this integration (the counter for
-control frames). Both need the same Bindkey, so this module watches the built-in
-integration and creates a control entry when it adds the module: the Bindkey is
-taken from there instead of being entered twice. An entry the user removed is
-remembered and not recreated.
+The built-in BTHome integration owns the measurement parser. The control
+integration subscribes to its authenticated updates when the runtime supports
+sharing, and uses a local parser as fallback. Both paths follow the same Bindkey.
+This module creates control entries and remembers deliberately removed entries.
 """
 
 from __future__ import annotations

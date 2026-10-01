@@ -11,6 +11,8 @@ BTHOME_SERVICE_UUID = "0000fcd2-0000-1000-8000-00805f9b34fb"
 COUNTER_MAX_AGE = 45.0
 COUNTER_WAIT_TIMEOUT = 5.0
 ESP_ACTION_TIME = 2.1
+MODE_SETTLE_TIME = 5.0
+RUNTIME_CHECK_INTERVAL = 5.0
 
 # ESPHome actions with this name broadcast the control frames. Nodes offering it
 # are discovered automatically; the one currently hearing the radar is preferred.

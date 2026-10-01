@@ -1,20 +1,62 @@
 # LD2401 OUT Control for Home Assistant
 
-This custom integration adds three stateless command buttons for an LD2401 running the encrypted BTHome control firmware:
+Integration **1.1.0** provides one **OUT mode** select entity with three options:
+`auto`, `hold_low`, and `hold_high`. Suggested entity id:
+`select.ld2401_<short address>_out_mode`. The id and unique id are anchored on the
+module address, so device renaming and translations do not change them.
 
-- **Hold OUT low**
-- **Hold OUT high**
-- **Return OUT to auto**
+Firmware **26092431** includes manual hold (`0x0F`) and physical OUT (`0x10`) in
+every encrypted BTHome frame. Automatic mode is hold=0 regardless of the current
+pin level; hold=1 reports low/high according to the pin. The mode selector is
+unavailable until recent authenticated mode feedback arrives. Earlier firmware
+continues to provide its sensor measurements, but does not provide mode feedback.
 
-OUT itself has only two levels; the third button is a command, not a state — it releases the manual hold and hands OUT back to the module's own control. The physical level is reported by the built-in BTHome integration as a power binary sensor, which is why these buttons are stateless.
+The selected option changes immediately. The integration sends the authenticated
+command while suppressing transient previous-mode feedback. Matching newer
+feedback ends this pending selection. A failed send restores the last observed
+mode; after transmission a five-second settling window expires on the next frame
+or periodic check, and the display reconciles with the last observed mode.
+The entity is updated only when its displayed mode or availability changes.
+Counter reception continues on every accepted fresh frame.
 
-The buttons are created as `button.ld2401_<short address>_out_low`, `..._out_high` and `..._out_auto` (for example `button.ld2401_abcd_out_low`): the id is anchored on the module address, so renaming the device or changing the translation does not move it. Renaming an entity in Home Assistant still takes precedence, and entities created by an earlier version keep the id they already had.
+The built-in BTHome integration normally decrypts and parses each advertisement
+once. This integration registers an additional data processor on that entry's
+runtime coordinator and consumes its parsed values and authenticated encryption
+counter. The raw Bluetooth callback checks runtime ownership and handles fallback;
+it does not decrypt while sharing is active. The adapter checks the runtime
+interface rather than using an exact-version whitelist. HA 2024.8.0 introduced
+BTHome's `entry.runtime_data` storage; this integration retains its declared minimum
+HA version of **2026.3.0**. Source/API checks do not substitute for live HA testing.
 
-The integration listens passively for the module's encrypted `0xFCD2` BTHome service data. It authenticates and decodes those frames with [`bthome-ble`](https://pypi.org/project/bthome-ble/), the same library Home Assistant's built-in BTHome integration uses, so the BTHome frame format, CCM authentication, replay filtering and measurement decoding are not duplicated here. Each accepted frame hands over its counter, which is used exactly once to build a signed control frame. That frame is then sent through an ESPHome broadcast action, which transmits it for one second. The integration never connects to the radar.
+BTHome unload/reload and key changes are checked on advertisements and every five
+seconds. If the runtime interface is absent or incompatible, a lazy standalone
+`bthome-ble` parser authenticates the frames instead. Both paths enforce newer
+counters, successful encryption authentication, and the configured Bindkey;
+plaintext and stale/replayed data cannot authorize a command. Parsed value objects
+and authenticated frame lengths are checked to avoid inheriting a hold value from
+cached measurements when an earlier firmware is installed. ESPHome still receives
+only the signed control advertisement and never receives the Bindkey.
+
+### Upgrade from 1.0.0
+
+The three command button entities are removed from the entity registry during
+setup. Automations targeting them must be migrated to `select.select_option`:
+
+```yaml
+action: select.select_option
+target:
+  entity_id: select.ld2401_abcd_out_mode
+data:
+  option: hold_high
+```
+
+Use `hold_low` or `auto` for the other modes. Install firmware 26092431 before
+using the selector. Existing radar device associations, BTHome measurements and
+ESPHome broadcast actions are retained.
 
 ## Bindkey and mirroring
 
-The radar's frames are consumed twice — by the built-in BTHome integration (measurements) and by this integration (the control counter) — and both need the same Bindkey. The Bindkey is the root of both directions of this channel: the control frame is signed with a key derived from it (`AES(bindkey, "LD24-CTRL-KEY-v1")`), and the counter that frame carries is only trusted because it arrived inside a frame this Bindkey authenticates — an unauthenticated high counter from a third party could otherwise steer the control window.
+The radar's parsed frames normally serve both the built-in BTHome measurements and this integration's mode feedback/control counter through one parser. The fallback parser uses the same Bindkey. The Bindkey is the root of both directions of this channel: the control frame is signed with a key derived from it (`AES(bindkey, "LD24-CTRL-KEY-v1")`), and the counter that frame carries is only trusted because it arrived inside a frame this Bindkey authenticates — an unauthenticated high counter from a third party could otherwise steer the control window.
 
 This integration therefore **reads the Bindkey from the built-in BTHome integration's entry for the same address every time** it authenticates a frame or builds a control frame:
 
@@ -47,8 +89,8 @@ ESPHome nodes expose the broadcast through an action named **`ld2401_control_bro
 
 When no node offers the action, commands fail with an error saying so. **Reconfigure** only sets this action; the Bindkey needs no attention there.
 
-After a button press, the integration waits for a new authenticated counter that arrived after the press, so a cached advertisement cannot accidentally authorize a repeated command after a Home Assistant reload. It reports an error if it has not received a fresh frame or no ESPHome action is available, and it serializes button presses with a 2.1-second minimum interval between transmissions.
+After a selection, the integration waits for a new authenticated counter that arrived after the selection, so a cached advertisement cannot accidentally authorize a repeated command after a Home Assistant reload. It reports an error if it has not received a fresh frame or no ESPHome action is available, and it serializes commands with a 2.1-second minimum interval between transmissions.
 
-The node answers each call through `api.respond`, so a frame it refuses (bad payload or BLE not active) makes the press fail with that reason instead of silently reporting success. Nodes without that answer — an older ESPHome config — are still supported: the call is then simply fire-and-forget.
+The node answers each call through `api.respond`, so a frame it refuses (bad payload or BLE not active) makes the selection fail with that reason instead of silently reporting success. Nodes without that answer — an older ESPHome config — are still supported: the call is then simply fire-and-forget.
 
 ESPHome receives only the short-lived signed control frame; the Bindkey is never logged or sent anywhere.

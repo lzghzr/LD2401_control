@@ -1,4 +1,4 @@
-# 26092430 构建与设备工具
+# 固件构建与设备工具
 
 ## 准备
 
@@ -30,28 +30,28 @@ python -B Developer/tools/build.py --check-inputs
 python -B Developer/tools/build.py
 ```
 
-默认输出到 `build/26092430/`，含 UFW、ELF、反汇编、目标文件和 `build-report.json`。再次构建选择新的空目录：
+默认构建 26092431 候选并输出到 `build/26092431/`，含 UFW、ELF、反汇编、目标文件和 `build-report.json`。再次构建选择新的空目录：
 
 ```shell
-python -B Developer/tools/build.py --output-dir build/reproduce-26092430
+python -B Developer/tools/build.py --version 26092430 --output-dir build/reproduce-26092430
 ```
 
 正式交接先提交源码并确认工作树干净，再增加 `--release`。所有相对参数按当前 cwd 解释；默认输入、源码和输出相对脚本定位的仓库根目录，因此也能从其他目录调用脚本的完整路径。不得用 `python -O` 关闭断言。
 
-参考 UFW 为 **607840 字节**，SHA-256：
+26092430 参考 UFW 为 **607840 字节**，SHA-256：
 
 ```text
 7e74ed708e109bbd721371a2b74244ea52743be85e9b251198cecdf1f23add7d
 ```
 
-构建器强制此哈希，确认当前源码与工具链生成已测试的精确 26092430 文件。构建输出与本机路径报告保存在本地，不放入公开源码归档。
+`--version 26092430` 强制此哈希，确认源码与工具链生成已测试的精确参考文件。26092431 候选也固定其 SHA-256，身份见 [候选记录](../metadata/firmware-26092431.json)。工具链三个可执行文件均校验已验证哈希。正式候选使用独立 Build ID，例如 `--build-id 26092431-mode-feedback-r1 --output-dir build/26092431-mode-feedback-r1 --release`；新候选的独立审计与实机验证需另行记录。构建输出与本机路径报告保存在本地，不放入公开源码归档。
 
 ## 刷写与读取密钥
 
 可在 HLKRadarTool 中选择生成的 UFW。PC BLE OTA 工具保留为显式设备操作入口：
 
 ```shell
-python -B Tester/tools/jl_ota_pc.py --mac <模块地址> --file build/26092430/LD2401_2.50_26092430.ufw --trace local/ota-trace.json
+python -B Tester/tools/jl_ota_pc.py --mac <模块地址> --file build/26092431/LD2401_2.50_26092431.ufw --trace local/ota-trace.json
 ```
 
 该工具执行升级，日志包含设备通信。当前任务的权限由操作者明确指定。普通 USB 转串口板用于串口配置，强制恢复需要单独验证的硬件通路。

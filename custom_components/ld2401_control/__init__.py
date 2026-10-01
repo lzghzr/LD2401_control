@@ -7,12 +7,13 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 
 from .const import CONF_ACTION, CONF_BINDKEY, CONF_ADDRESS, DOMAIN
 from .coordinator import LD2401ControlManager
 from .mirror import async_get_mirror
 
-PLATFORMS: list[Platform] = [Platform.BUTTON]
+PLATFORMS: list[Platform] = [Platform.SELECT]
 
 
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
@@ -22,7 +23,7 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up the passive listener and the OUT mode command buttons."""
+    """Set up feedback sharing and the OUT mode selector."""
     manager = LD2401ControlManager(
         hass,
         address=entry.data[CONF_ADDRESS],
@@ -31,6 +32,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         name=entry.title,
     )
     entry.runtime_data = manager
+    registry = er.async_get(hass)
+    address = manager.address.replace(":", "").lower()
+    obsolete_ids = {f"{address}_{key}" for key in ("out_low", "out_high", "out_auto")}
+    for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
+        if entity.domain == "button" and entity.platform == DOMAIN and entity.unique_id in obsolete_ids:
+            registry.async_remove(entity.entity_id)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     manager.start()
     entry.async_on_unload(manager.stop)

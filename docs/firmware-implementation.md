@@ -2,7 +2,7 @@
 
 ## Target and source identity
 
-The target module is HLK LD2401, and the target platform is JieLi Q32S. The target factory firmware is `LD2401_2.50.24110415.ufw`. The builder pins that firmware package to SHA-256 `3e518750921f9392eb71da0becc641915d4204376f7eb571c54ed4f586bab9a7`. It reads both flash mirrors, expects their application payloads to match, and reconstructs the UFW container after replacing the application image. The source builder generates firmware version `2.50.26092430`; the resulting UFW is a local build output.
+The target module is HLK LD2401, and the target platform is JieLi Q32S. The target factory firmware is `LD2401_2.50.24110415.ufw`. The builder pins that firmware package to SHA-256 `3e518750921f9392eb71da0becc641915d4204376f7eb571c54ed4f586bab9a7`. It reads both flash mirrors, expects their application payloads to match, and reconstructs the UFW container after replacing the application image. The source builder defaults to candidate `2.50.26092431`; `--version 26092430` preserves the fixed-hash reference reproduction. Both versions pin their output hashes. The resulting UFW is a local build output.
 
 The application code is compiled into a tail region beginning at `0x1e2a454`; short hooks redirect selected stock call sites into it. The linker script records the section map and stock ROM entry points. The build source also fixes the two VM boundaries at `0x2f000` and `0x2e000` for the two mirror formats. These addresses belong to this specific base image and must be recalculated for any other firmware.
 
@@ -21,6 +21,8 @@ Build-time Python helpers live alongside the builder in `Developer/tools/`. The 
 ## Broadcast behavior
 
 The firmware submits encrypted BTHome v2 service data on the existing legacy advertising path at a 500 ms timer cadence. The service-data UUID is `0xFCD2`; its encrypted-data header is `0x41`. The payload uses the device MAC and the BTHome counter in the AES-CCM nonce, with a four-byte MIC.
+
+Candidate 26092431 adds generic boolean (`0x0F`) from the stock manual-hold byte `0x4514`. Hold and physical OUT are sampled together, and a changing hold flag defers the frame. This two-byte object takes the maximum plaintext to 15 bytes and the complete legacy advertising payload to 31 bytes. The `LD24_OUT_MODE_STATUS` build define enables this layout; without it the 26092430 reference remains byte-identical. The context allocation, VM record, existing hooks and VM boundaries remain the same.
 
 The BTHome object stream includes illuminance (`0x05`), OUT as a one-byte binary/power object (`0x10`), motion (`0x21`), occupancy (`0x23`), voltage (`0x0C`), and distance (`0x40`). With a valid radar snapshot, the frame alternates voltage and distance by counter parity to fit the legacy advertisement limit. Without a valid snapshot, voltage remains present each frame. The source calculations are in `build_live()` in `payload.c`; preserve those encodings when updating the object map.
 

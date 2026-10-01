@@ -4,17 +4,12 @@
     {
       "path": "custom_components/ld2401_control/__init__.py",
       "sha256": "6d97d760e9101fa6a7110b2efd0e0edf2aebfeb8d7c8af3262ea1818a66bcba3",
-      "distribution_sha256": "6d97d760e9101fa6a7110b2efd0e0edf2aebfeb8d7c8af3262ea1818a66bcba3"
+      "distribution_sha256": "7a2f1cc469d371a3d435e95670420775e287addcf7b2bfa2b02faa222caafb63"
     },
     {
       "path": "custom_components/ld2401_control/bthome.py",
       "sha256": "df5839e594d948d5489bdbfaceb31815e5d35a3d1454c02c7085863bcf08973a",
-      "distribution_sha256": "df5839e594d948d5489bdbfaceb31815e5d35a3d1454c02c7085863bcf08973a"
-    },
-    {
-      "path": "custom_components/ld2401_control/button.py",
-      "sha256": "dd97def8146608a37d16e0ba10a58ec555fcad1c8b8449e9a613b4dbdaff0683",
-      "distribution_sha256": "dd97def8146608a37d16e0ba10a58ec555fcad1c8b8449e9a613b4dbdaff0683"
+      "distribution_sha256": "39b27f0094145f1ebb0d4dbdc8ad67fe29eb19c18b889c41b9d1383f173f624b"
     },
     {
       "path": "custom_components/ld2401_control/codec.py",
@@ -29,37 +24,37 @@
     {
       "path": "custom_components/ld2401_control/const.py",
       "sha256": "e0944bf067de4626c7072a1cd6ac0e1701f6b97d7a43dd5eb70a880b9f0024d3",
-      "distribution_sha256": "e0944bf067de4626c7072a1cd6ac0e1701f6b97d7a43dd5eb70a880b9f0024d3"
+      "distribution_sha256": "bf6b123032388453c21549a97760be65c34db334a3651c6116fb0ab0c0c20a5c"
     },
     {
       "path": "custom_components/ld2401_control/coordinator.py",
       "sha256": "2cc9d926598dda1cd9c301d9de88b38a55f06656b0b1fd6719b32e500e5293f5",
-      "distribution_sha256": "d6404f484480feb9525af5aa20fc44dd3e1cc08bf863542d3c8e85c6a0edd439"
+      "distribution_sha256": "15a4869143fc440e7426105ad2b458035de2296cc1531714d601341bfa051a55"
     },
     {
       "path": "custom_components/ld2401_control/manifest.json",
       "sha256": "98deb34a9fd1f1ac5d323ae9488319fedda12df56668d763cd2bbfcf29b7657d",
-      "distribution_sha256": "c13251e05a377473b6b98f92715e4c059461031283c70caaff83fcffa502f481"
+      "distribution_sha256": "8ec4b16a19a6d0b9e8caede64299add332642b66785aeedd4693da077092b8b3"
     },
     {
       "path": "custom_components/ld2401_control/mirror.py",
       "sha256": "3eda1ece2b0c0decd1ee600eff0dd58a1c86580190389a506e43b55f443f3efe",
-      "distribution_sha256": "06fa2c4ff81af8b5b45ca67a052947297e60bdd31389de285d763135891a63d8"
+      "distribution_sha256": "889ce90d748c47d8497448e19b952cbd4d031a115f32fd146ae96bf7229f1b67"
     },
     {
       "path": "custom_components/ld2401_control/strings.json",
       "sha256": "537ec91943b3d042d74765ff4cd3db44f28d931ffb951608473b2e6714e56de6",
-      "distribution_sha256": "537ec91943b3d042d74765ff4cd3db44f28d931ffb951608473b2e6714e56de6"
+      "distribution_sha256": "ca53f54235c57509d3b5faa436fdae4212ddc1b6a6aa5d061a942ef56fd7bf77"
     },
     {
       "path": "custom_components/ld2401_control/translations/zh-Hans.json",
       "sha256": "8f53c0bd7f380346a0c2f038a081dd719156a5a1231bc2c2a2912c1b60e0ea66",
-      "distribution_sha256": "8f53c0bd7f380346a0c2f038a081dd719156a5a1231bc2c2a2912c1b60e0ea66"
+      "distribution_sha256": "5064db4a7612efe3a7a93df615bc927948edd472a40de3284c225e268dd08e25"
     },
     {
       "path": "Developer/src/payload.c",
       "sha256": "594ce181fe201e5d26a11ce9d248714717b07f983c1e98e71c077aa08571958d",
-      "distribution_sha256": "b531e179dab5c4a4f2a2b0d9a3c2a8f9f272345801f2aeb9635988336a013c0a"
+      "distribution_sha256": "7e867d0f24186330411f844ecfe8a9683524b3ddf0776f13fba734ac394c1016"
     },
     {
       "path": "Developer/src/rxcontrol.c",
@@ -100,6 +95,15 @@
       "path": "Developer/tools/ld24_elf_sections.py",
       "sha256": "dd8638370ba14ea3c309645db95064527795668a6d7e7443dc5916fc86d94578",
       "distribution_sha256": "dd8638370ba14ea3c309645db95064527795668a6d7e7443dc5916fc86d94578"
+    }
+  ],
+  "retired_files": [
+    {
+      "path": "custom_components/ld2401_control/button.py",
+      "sha256": "dd97def8146608a37d16e0ba10a58ec555fcad1c8b8449e9a613b4dbdaff0683",
+      "distribution_sha256": "dd97def8146608a37d16e0ba10a58ec555fcad1c8b8449e9a613b4dbdaff0683",
+      "retired_in": "1.1.0",
+      "replacement": "custom_components/ld2401_control/select.py"
     }
   ]
 }

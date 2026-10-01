@@ -15,7 +15,7 @@ SRC = ROOT / 'Developer/src'
 LINKER = ROOT / 'Developer/linker/layout.ld'
 sys.path.insert(0, str(HERE))
 from ufw_format import parse_flash_image, read_ufw  # noqa: E402
-from flash_layout import transplant_image  # noqa: E402
+from flash_layout import check_reserved_layout, transplant_image  # noqa: E402
 from ld24_elf_sections import elf_sections  # noqa: E402
 from ufw_container import repack  # noqa: E402
 
@@ -224,19 +224,18 @@ assert len(result) - len(raw) == sum(layouts[k]['new_vm_start'] - layouts[k]['ol
 assert all(layouts[k]['program_end'] <= layouts[k]['new_vm_start'] for k in (0, 32))
 if OUTPUT.exists():
     assert OUTPUT.read_bytes() == result, 'refusing to overwrite a different file'
-OUTPUT.write_bytes(result)
 
 checks = {}
 for kind in (0, 32):
     chk = parse_flash_image(result, kind)
+    reserved_checks = check_reserved_layout(states[kind], chk, VM_START_FIXED[kind])
     checks[kind] = dict(
         app_matches=chk['payload'] == bytes(app),
         app_bytes=len(chk['payload']), app_sha256=sha(chk['payload']),
         key_preserved=chk['key'] == states[kind]['key'],
         flash_crc=chk['flash_ent']['crc_valid'],
         nested_crc=all(e['crc_valid'] for g in ('areas', 'appfiles') for e in chk[g]),
-        reserved_entries_unchanged=[(e['name'], e['offset'], e['size']) for e in chk['appfiles'] if e['flags'] & 0x10] ==
-                                   [(e['name'], e['offset'], e['size']) for e in states[kind]['appfiles'] if e['flags'] & 0x10],
+        reserved_entry_checks=reserved_checks,
         vm_entry=[(e['offset'], e['size']) for e in chk['appfiles'] if e['name'] == 'VM'],
         stock_vm_entry=[(e['offset'], e['size']) for e in states[kind]['appfiles'] if e['name'] == 'VM'],
         vm_start=layouts[kind]['new_vm_start'], app_area_end=layouts[kind]['program_end'],
@@ -248,6 +247,7 @@ non_flash_identical = all(
     for a, b in zip(old_entries, new_entries) if a['type'] not in (0, 32))
 assert non_flash_identical, 'non-flash UFW payload changed'
 assert BASE_IN.read_bytes() == raw
+OUTPUT.write_bytes(result)
 
 report = dict(
     variant=args.variant, version=VERSION, build_id=BUILD_ID,
@@ -280,7 +280,9 @@ report = dict(
     undocumented_commands_preserved=True,
     stock_command_bodies_identical=True,
     stock_dispatch_entries_identical=True,
-    reserved_entries_unchanged=all(checks[k]['reserved_entries_unchanged'] for k in (0, 32)),
+    reserved_layout_validated=all(
+        entry['passed'] for mirror in checks.values()
+        for entry in mirror['reserved_entry_checks'].values()),
     vm_start_fixed={str(k): hex(v) for k, v in VM_START_FIXED.items()},
     vm_start_shift_image0=layouts[0]['new_vm_start'] - layouts[0]['old_vm_start'],
     vm_start_shift_image32=layouts[32]['new_vm_start'] - layouts[32]['old_vm_start'],

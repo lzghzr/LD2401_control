@@ -54,6 +54,11 @@ Use `hold_low` or `auto` for the other modes. Install firmware 26092431 before
 using the selector. Existing radar device associations, BTHome measurements and
 ESPHome broadcast actions are retained.
 
+After upgrading the firmware, the built-in BTHome integration also adds a
+`generic` binary sensor for manual hold (`0x0F`): on means the module is holding
+OUT manually, and off means automatic mode. The OUT mode selector combines this
+sensor's state with the physical OUT level.
+
 ## Bindkey and mirroring
 
 The radar's parsed frames normally serve both the built-in BTHome measurements and this integration's mode feedback/control counter through one parser. The fallback parser uses the same Bindkey. The Bindkey is the root of both directions of this channel: the control frame is signed with a key derived from it (`AES(bindkey, "LD24-CTRL-KEY-v1")`), and the counter that frame carries is only trusted because it arrived inside a frame this Bindkey authenticates — an unauthenticated high counter from a third party could otherwise steer the control window.

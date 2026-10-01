@@ -68,24 +68,26 @@ def test_key_epoch_and_legacy_feedback():
     assert frames.mode is None
 
 
-def test_shared_updates_decrypt_once(monkeypatch):
+def test_shared_updates_use_authenticated_parser():
     parser = BTHomeBluetoothDeviceData(bindkey=KEY)
     owner = coordinator(parser)
     frames = frames_module.BTHomeFrames(KEY)
     accepted = []
     cancel = shared_module.subscribe_updates(owner, lambda p, u: accepted.append(frames.accept(p, u)))
-    decrypts = 0
-    decrypt = parser._decrypt_bthome
-
-    def counted(data):
-        nonlocal decrypts
-        decrypts += 1
-        return decrypt(data)
-
-    monkeypatch.setattr(parser, "_decrypt_bthome", counted)
     owner._process_update(parser.update(advertisement(8193, 1, 1)))
+    assert parser.bindkey_verified and not parser.decryption_failed
     assert accepted == [True] and frames.mode == 1
-    assert decrypts == 1 and frames._parser is None
+    assert frames.counter == parser.encryption_counter == 8193
+    assert frames._parser is None  # sharing never creates a fallback parser
+    owner._process_update(parser.update(advertisement(8194, 1, 0, corrupt=True)))
+    assert parser.decryption_failed
+    assert accepted == [True, False]
+    assert frames.counter == 8193 and frames.mode == 1
+    owner._process_update(parser.update(advertisement(8195, 1, 0)))
+    assert parser.bindkey_verified and not parser.decryption_failed
+    assert accepted == [True, False, True]
+    assert frames.counter == parser.encryption_counter == 8195 and frames.mode == 0
+    assert frames._parser is None
     cancel()
     assert not owner._processors
 

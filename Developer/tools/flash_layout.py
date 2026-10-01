@@ -12,6 +12,36 @@ def file_bytes(state, name):
     return bytes(state['plain'][start:start+e['size']])
 
 
+def check_reserved_layout(old, new, vm_start):
+    """Assert each reserved entry's policy and return reportable evidence."""
+    names = {'VM', 'PRCT', 'BTIF', 'EXIF'}
+    before = [e for e in old['appfiles'] if e['flags'] & 0x10]
+    after = [e for e in new['appfiles'] if e['flags'] & 0x10]
+    assert len(before) == len(after) == len(names), 'reserved entry count changed'
+    assert {e['name'] for e in before} == {e['name'] for e in after} == names, 'reserved entry names changed'
+    original = {e['name']: e for e in before}
+    current = {e['name']: e for e in after}
+    checks = {}
+    for name in sorted(names):
+        a, b = original[name], current[name]
+        for field in ('header', 'flags', 'reserved', 'last', 'data_crc'):
+            assert a[field] == b[field], f'{name} {field} changed'
+        if name == 'VM':
+            policy = 'fixed start; preserve original end'
+            assert b['offset'] == vm_start, 'VM start differs from fixed boundary'
+            assert b['size'] > 0 and b['offset'] + b['size'] == a['offset'] + a['size'], 'VM end changed'
+        elif name == 'PRCT':
+            policy = 'start at zero; end at VM start'
+            assert b['offset'] == 0 and b['size'] == vm_start, 'PRCT must end at VM start'
+        else:
+            policy = 'preserve original offset and size'
+            assert (a['offset'], a['size']) == (b['offset'], b['size']), f'{name} moved or resized'
+        checks[name] = dict(policy=policy, passed=True,
+                            before=dict(offset=a['offset'], size=a['size']),
+                            after=dict(offset=b['offset'], size=b['size']))
+    return checks
+
+
 def transplant_image(old, donor, alignment, app_payload=None):
     base = old['base']
     assert len(old['areas']) == len(donor['areas']) == 2

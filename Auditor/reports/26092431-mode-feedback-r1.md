@@ -269,3 +269,13 @@ Developer 提交 `2143a1164b30c54ab70d5f39a96beb2686f5f280`「Fix audit feedback
 
 - `26092431-audit-fixes-dev1` 的报告记录 `git_commit=2603db5`、`git_dirty=true`，属开发模式构建，**没有 release 报告绑定 `2143a11`**。按 CONTRIBUTING，已交接候选的 commit 与二进制保持冻结，故当前交付身份仍是 `2603db5` + `367df6fd…`，本报告的审计结论继续有效；若维护者希望交付身份前移到 `2143a11`，需从干净的该 commit 用 `--release` 与新 Build ID 重新构建（当前工作树含 Tester / Auditor 未提交改动，尚不满足干净条件）。
 - `Developer/verification-26092431.md` 已如实更正原 3.9.1 声明（承认原声明有误），与 §7 AUD-01 一致。
+
+## 12. 交付绑定（维护者后续记录，2026-10-01）
+
+本节由维护者补记，不改写 §1–§11 的审计结论与证据，只记录后续的交付动作。
+
+维护者已将交付提交到 `main`，并从该干净提交用 `Developer/tools/build.py --release` 重建 release 报告：`git_dirty=false`，输出 UFW 仍为 `367df6fd…5872a`（607840 字节），`reserved_layout_validated=true`，对该包运行 `Auditor/tools/fw_audit.py` 仍为 `36 ok / 0 failed / 0 skipped`。
+
+交付沿用同一 Build ID `26092431-mode-feedback-r1`。本次只更换干净的构建 commit：固件源码、链接脚本、构建参数与工具链字节均未变化，新旧两次构建的 UFW 逐字节相同，20 个已分配节的地址与内容全部一致（ELF 差异仅在节头字符串表中的对象文件路径）。按 CONTRIBUTING「复现同一输入也用独立目录」，输出写入新的空目录，已冻结的 r1 产物未被覆盖；三个角色报告绑定的 Build ID 因此保持不变。
+
+`metadata/firmware-26092431.json` 已更新为交付记录：`hardware_status=USER_CONFIRMED_TESTED`、`independent_audit_status=COMPLETED`，`coverage` 指向本报告与 [Tester 报告](../../Tester/reports/26092431-mode-feedback-r1.md)。§11.4 中「当前交付身份仍是 `2603db5`」的状态已由此取代，本报告的审计结论继续对同一 UFW 字节有效。

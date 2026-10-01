@@ -65,7 +65,8 @@ def main():
                                          cwd=directory, text=True)
         assert '0x100c' in result
         for tool in ('fw_audit.py', 'q32s_xref.py', 'reproduce_candidate.py',
-                     'ha_feedback_check.py', 'ha_routing_check.py'):
+                     'ha_feedback_check.py', 'ha_routing_check.py',
+                     'ha_dispatch_check.py'):
             subprocess.run([sys.executable, '-B', str(HERE / tool), '--help'],
                            cwd=directory, stdout=subprocess.DEVNULL, check=True)
     print('PASS: Auditor local imports, CRC/header rejection, Q32S fixture, CLI entries')

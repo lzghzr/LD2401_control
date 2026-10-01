@@ -2,7 +2,7 @@
 
 开始工作先读 [CONTRIBUTING.md](CONTRIBUTING.md)、[固件身份](metadata/firmware-26092431.json) 和任务相关文档。
 
-1. 目标模块 LD2401，目标平台 JieLi Q32S；目标原厂固件 `LD2401_2.50.24110415.ufw`；当前交付固件 2.50.26092431，HA 集成 1.1.3。
+1. 目标模块 LD2401，目标平台 JieLi Q32S；目标原厂固件 `LD2401_2.50.24110415.ufw`；当前交付固件 2.50.26092431，HA 集成 1.1.4。
 2. 按用户指定的 Developer、Auditor、Tester 角色工作；缺省 Developer。实现与审计/实测结论的所有权见 CONTRIBUTING。
 3. 本仓库内 `Developer/src`、`Developer/linker`、`Developer/tools` 为固件正式源码入口；HA 和 ESPHome 正式实现各在同名目录。串口、PC OTA 设备工具及协议测试在 `Tester/tools`，由 Tester 维护。其他公共文件的归属见 `metadata/file-ownership.json`。
 4. 正式交接从干净 Git commit 构建，用完整 commit、Build ID、UFW SHA-256 绑定；每个候选使用独立输出目录，已交接产物不可覆盖。

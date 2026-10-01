@@ -27,7 +27,12 @@
     {
       "path": "Auditor/tools/selftest.py",
       "origin": "Created for the public role toolkit",
-      "distribution_sha256": "c2ee13957a14b1c00ad0b4bc18301888d3aae27132f2931d6ff62b4f45f1afec"
+      "distribution_sha256": "02a5716d801798e1f0e878eab212a911ed0fdad27f2e9185309e42bd3043210a"
+    },
+    {
+      "path": "Auditor/tools/ha_dispatch_check.py",
+      "origin": "Created for the public role toolkit; needs bluetooth_adapters and cryptography when it runs",
+      "distribution_sha256": "97e7a91e04a3ad0e07cd49c64759cabc43b62942e355421b0fc704449bea2d51"
     },
     {
       "path": "Auditor/tools/reproduce_candidate.py",
@@ -88,6 +93,16 @@
       "path": "Tester/tools/ha_out_test.py",
       "origin": "Created for the public role toolkit; needs a local HA credential file and an ESPHome proxy",
       "distribution_sha256": "26c9ca660fa2b41577879e7a7b04e4f840cbecf5640b3963b8507b19f6dbe7d2"
+    },
+    {
+      "path": "Tester/tools/ha_latency_test.py",
+      "origin": "Created for the public role toolkit; needs a local HA credential file and an ESPHome proxy",
+      "distribution_sha256": "d87d28cb3cd2be45607ce046a55a0fe9e196f8aed6b301fa111ccbabb2c715d7"
+    },
+    {
+      "path": "Tester/tools/ha_dispatch_test.py",
+      "origin": "Created for the public role toolkit; needs a local HA credential file and an ESPHome proxy",
+      "distribution_sha256": "ff359792f69b381c8e2fee59604c7014b98cdeaee7d9e2a747e233eda6fd129a"
     }
   ]
 }

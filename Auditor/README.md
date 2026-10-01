@@ -8,7 +8,7 @@
 
 | 报告 | 对象 |
 | --- | --- |
-| [26092431-mode-feedback-r1](reports/26092431-mode-feedback-r1.md) | 固件 commit `343a0d2` / Build ID `26092431-mode-feedback-r1` / UFW `367df6fd…`；HA 侧发送节点选择复核见该报告 §13（1.1.1，`969de8f`）、§14（1.1.2，`8ae3932`）与 §15（1.1.3，`f854165`） |
+| [26092431-mode-feedback-r1](reports/26092431-mode-feedback-r1.md) | 固件 commit `343a0d2` / Build ID `26092431-mode-feedback-r1` / UFW `367df6fd…`；HA 侧发送节点选择与命令派发复核见该报告 §13（1.1.1，`969de8f`）、§14（1.1.2，`8ae3932`）、§15（1.1.3，`f854165`）与 §16（1.1.4，`c7dcf8e`） |
 
 ## 专用工具
 
@@ -18,11 +18,12 @@
 | `tools/reproduce_candidate.py` | 不经过 Developer 构建器，用固定工具链自行编译、链接候选源码，并把每段已分配节绑定到候选包字节；同时导出地址立即数引用点 |
 | `tools/ha_feedback_check.py` | 用真实 `bthome-ble` 和指定 HA 版本的 passive processor 源码，独立构造帧并核对模式解码、重放/篡改拒绝、共享解析与实体选项映射 |
 | `tools/ha_routing_check.py` | 用真实 `bluetooth_adapters.adapter_human_name` 与每地址 `discovered_device_timestamps` 构造扫描器夹具，驱动指定目录（含更早版本副本）的发送节点选择逻辑，核对节点身份匹配、RSSI 频带、接收新鲜度、迟滞、显式动作优先与 fail-closed 行为，并报告 RSSI 边界形态 |
+| `tools/ha_dispatch_check.py` | 用自己的替身驱动真实 manager 的 `async_select_mode`，断言可观测结果：计数器严格递增且不重复、每次派发的模式与该次选择一致、**任务异常被逐一检查而非吞掉**、相邻两次派发**逐对**满足最小间隔（既不短于间隔、也不含调用后等待）、被取代的选择静默不发、补上新计数器后**最终派发的是最新选择**并在匹配反馈后确认、接收时间早于启动/换钥纪元的计数器不能授权 |
 | `tools/q32s_xref.py` | 从 Q32S 反汇编查询直接调用、调用链、立即数引用和跳转表；`refs` 同时识别十进制与十六进制操作数 |
 | `tools/audit_ld2401_ufw.py` | Auditor 固定的只读 UFW/JLFS 解析库 |
 | `tools/selftest.py` | 用合成数据检查本目录的导入、CRC、调用目标解析和命令入口 |
 
-所有工具仅使用 Python 标准库（`ha_feedback_check.py` 另需被测环境中的 `bthome-ble`，`ha_routing_check.py` 另需 `bluetooth_adapters` 与 `cryptography`）。输入路径显式指定，相对路径按调用者的当前目录解释；不会自动选择候选包或从其他目录更新工具。`reproduce_candidate.py` 的工具链目录默认 `C:/JL/pi32/bin`，可用环境变量 `JL_Q32S_BIN` 覆盖（与 Developer 构建器同名）。示例在仓库根目录运行：
+所有工具仅使用 Python 标准库（HA 侧三个工具另需被测环境中的 `bthome-ble`、`bluetooth_adapters` 与 `cryptography`，或使用 `--integration-dir` 指向的副本）。输入路径显式指定，相对路径按调用者的当前目录解释；不会自动选择候选包或从其他目录更新工具。`reproduce_candidate.py` 的工具链目录默认 `C:/JL/pi32/bin`，可用环境变量 `JL_Q32S_BIN` 覆盖（与 Developer 构建器同名）。示例在仓库根目录运行：
 
 ```text
 python -B Auditor/tools/selftest.py
@@ -30,6 +31,7 @@ python -B Auditor/tools/fw_audit.py --package build/26092430/LD2401_2.50_2609243
 python -B Auditor/tools/reproduce_candidate.py --package build/26092431-mode-feedback-r1/LD2401_2.50_26092431.ufw --out local/auditor-repro-26092431 --version 26092431 --elf build/26092431-mode-feedback-r1/tail_plain.elf --ref 0x4514
 python -B Auditor/tools/ha_feedback_check.py --ha-processor local/ha-runtime/2026.9.3/bluetooth/passive_update_processor.py
 python -B Auditor/tools/ha_routing_check.py --expect-fixed --json local/audit-routing.json
+python -B Auditor/tools/ha_dispatch_check.py --expect-fixed --json local/audit-dispatch.json
 python -B Auditor/tools/q32s_xref.py --asm local/stock-q32s.asm callers 0x1e04c82
 ```
 
@@ -48,5 +50,7 @@ Auditor 的审计入口、ELF 读取与交叉引用逻辑保存在本目录，�
 `q32s_xref.py refs` 把寄存器加载操作数的十进制与十六进制写法都算作候选引用；低位地址也可能与普通常量（对象长度、掩码）相等，因此输出是待判定的候选而非已证实的指针。它只匹配操作数本身：`llvm-objdump` 附在分支后的 `<… : 地址 >` 注解是跳转目标，不计入引用。
 
 `ha_routing_check.py` 只覆盖节点选择逻辑：扫描器 API、服务注册表与配置项查询都是替身，不打开适配器、不启动 Home Assistant，也不证明真实部署里哪个节点离雷达更近。RSSI 边界场景（`None`、`0`）只报告不判定，由 Auditor 在报告中给出结论。
+
+`ha_dispatch_check.py` 只覆盖派发不变量：它用显式动作绕过节点选择，用自建替身代替 ESPHome 服务与 BLE 栈，因此不证明空口接收时间、也不证明 ESPHome 节点是否真正发出了广播；它断言的是“计数器不重复、调用不重叠、间隔逐对合规、最新选择被服务”这类进程内性质。它把每个任务的返回值与异常都当作结果断言，`asyncio.gather` 不使用 `return_exceptions=True` 静默吞掉异常——审计工具的这类假通过曾在本仓库出现一次，见 `AUD-09`。`--integration-dir` 可指向旧版本副本，但当该版本的内部签名不同时（例如 `_accepted_frame` 尚无 `received` 参数）本工具会直接报错而非给出对比结论。
 
 审计报告应绑定候选 commit / Build ID / UFW SHA-256，并注明工具版本、解析库身份、全部跳过项和结论。工具自检不构成某份固件的审计结论。

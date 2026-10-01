@@ -2,6 +2,8 @@
 
 实机测试报告及工具放在本目录。记录候选 commit、UFW SHA-256、串口 A0、广播版本、测试环境、覆盖和结果；真实设备地址与密钥置于本地配置，公开报告做脱敏。按 CONTRIBUTING 的职责边界工作。
 
+工作方式：**每完成一轮测试就更新报告**（把结果、证据文件与仍未覆盖项写进 `reports/`，除非用户另有要求）。未覆盖项与未定位的观察要如实列为待查项，不要把「无证据」写成结论。
+
 Tester 维护 `tools/a6.py`（串口配置、版本与密钥读写）、`tools/jl_ota_pc.py`（PC BLE OTA）以及一组经 ESPHome 代理与真实 HA 实例做端到端验证的工具。依赖安装使用 `python -m pip install -r Tester/requirements.txt`。入口及操作说明见 [构建与设备工具](../docs/firmware-build.md)。
 
 纯软件协议检查入口为 `python -B Tester/tools/check_protocol.py`，使用合成公开数据验证主机与 HA 编解码一致性。该检查不会连接硬件。
@@ -20,6 +22,8 @@ Tester 维护 `tools/a6.py`（串口配置、版本与密钥读写）、`tools/j
 | `tools/ha_probe.py` | 只读盘点真实 HA 实例：集成版本、条目、实体、设备、ESPHome 动作 | aiohttp |
 | `tools/ha_deploy.py` | 经 `ha_file_explorer` 拉取 / 推送 / 校验集成源码（部署与回滚） | aiohttp |
 | `tools/ha_out_test.py` | 经 HA 选择实体做端到端往返，并用解密广播核对空口是否真的改变 | aiohttp、aioesphomeapi、cryptography |
+| `tools/ha_latency_test.py` | 测单次选择的延时：服务调用确认（ack）、空口首次改变（air）、稳定窗口后是否仍为所选值 | aiohttp、aioesphomeapi、cryptography |
+| `tools/ha_dispatch_test.py` | 从空口解出控制帧（mode + counter）得到 HA 真实派发序列，据此判断是否有命令丢失 | aiohttp、aioesphomeapi、cryptography |
 | `tools/check_protocol.py`、`tools/check_capture.py` | 合成协议对比、各代明文布局解码、错误 MIC 与时效检查 | cryptography |
 
 主机适配器可能只交付 500 ms 广播流的一部分，因此 `decode_capture.py` 另报 `timeline`：由首个与末个认证 counter 的差与时间跨度算出真实节拍（主机漏报不影响该值），并检查 counter 单调。`capture_ble_proxy.py` 用 ESPHome 代理后端补足覆盖率，其 `raw`/`ad_bytes` 字段给出空口 AD 长度。
@@ -68,6 +72,11 @@ python -B Tester/tools/ha_deploy.py --token-file local/ha-token.txt --insecure v
 python -B Tester/tools/ha_out_test.py --token-file local/ha-token.txt --insecure \
     --entity select.ld2401_<末4位>_out_mode --mac 02:00:00:00:00:01 --key-file local/bindkey.txt \
     --proxy-host <代理节点> --apikey-file local/esphome.key
+
+# 延时基准：分别报「服务调用确认」「空口首次改变」「稳定窗口后是否仍为所选值」
+python -B Tester/tools/ha_latency_test.py --token-file local/ha-token.txt --insecure \
+    --entity select.ld2401_<末4位>_out_mode --mac 02:00:00:00:00:01 --key-file local/bindkey.txt \
+    --proxy-host <代理节点> --apikey-file local/esphome.key --iterations 10
 ```
 
 判读要点：

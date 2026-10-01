@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.4
+
+- Use recent authenticated unused cached counters after the startup/key baseline, reducing command latency.
+- Preserve actual advertisement reception timestamps and require a post-start/key reception before cache use.
+- Return after the ESPHome call; wait only the remaining 2.1-second dispatch interval before the next call.
+- Recheck counter freshness and resolve the sender after waiting; wake and skip superseded selections.
+- Add cached-counter, reload, key-rotation, failure, remaining-interval and sender-refresh regression checks.
+
 ## 1.1.3
 
 - Exclude unknown RSSI 0 from automatic sender ranking and hysteresis (AUD-06).

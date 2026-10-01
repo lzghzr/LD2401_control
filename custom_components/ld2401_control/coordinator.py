@@ -82,8 +82,11 @@ class LD2401ControlManager:
         self._last_source: str | None = None
         self._last_sender_action: tuple[str, str] | None = None
         self.frames = BTHomeFrames(bindkey)
-        self._last_received = 0.0
+        self._last_received: float | None = None
+        self._counter_baseline: int | None = None
+        self._counter_epoch_started = time.monotonic()
         self._last_sent_counter = 0
+        self._next_send_at = 0.0
         self._counter_changed = asyncio.Event()
         self._send_lock = asyncio.Lock()
         self._cancel_callback: Callable[[], None] | None = None
@@ -109,7 +112,13 @@ class LD2401ControlManager:
         return (
             not self._stopped
             and self.frames.mode is not None
-            and time.monotonic() - self._last_received <= COUNTER_MAX_AGE
+            and self._counter_is_recent()
+        )
+
+    def _counter_is_recent(self) -> bool:
+        return (
+            self._last_received is not None
+            and 0 <= time.monotonic() - self._last_received <= COUNTER_MAX_AGE
         )
 
     @callback
@@ -131,7 +140,9 @@ class LD2401ControlManager:
         if key != self.frames.bindkey:
             self.frames.ensure_bindkey(key)
             self._last_sent_counter = 0
-            self._last_received = 0.0
+            self._last_received = None
+            self._counter_baseline = None
+            self._counter_epoch_started = time.monotonic()
             self._clear_request()
             self._counter_changed.set()
             self._notify_state()
@@ -159,10 +170,16 @@ class LD2401ControlManager:
         self._clear_request()
 
     @callback
-    def _accepted_frame(self, source: str | None = None) -> None:
+    def _accepted_frame(self, source: str | None = None, *, received: float | None = None) -> None:
         if source:
             self._last_source = source
-        self._last_received = time.monotonic()
+        # Replayed/cached HA updates retain their actual reception time; a
+        # callback invocation must not make an old counter look fresh.
+        self._last_received = (
+            received if isinstance(received, (int, float)) and math.isfinite(received) else None
+        )
+        if self._counter_baseline is None:
+            self._counter_baseline = self.frames.counter
         self._counter_changed.set()
         if (
             self._requested_mode is not None
@@ -188,7 +205,7 @@ class LD2401ControlManager:
             return
         if accepted:
             info = getattr(parser, "last_service_info", None)
-            self._accepted_frame(getattr(info, "source", None))
+            self._accepted_frame(getattr(info, "source", None), received=getattr(info, "time", None))
 
     @callback
     def _detach_shared(self) -> None:
@@ -316,6 +333,8 @@ class LD2401ControlManager:
     def start(self) -> None:
         """Listen to cached and live advertisements from Home Assistant's BLE manager."""
         self._stopped = False
+        self._counter_baseline = self.frames.counter
+        self._counter_epoch_started = time.monotonic()
         self._ensure_shared()
         self._cancel_timer = async_track_time_interval(
             self.hass, self._runtime_tick, timedelta(seconds=RUNTIME_CHECK_INTERVAL)
@@ -369,22 +388,28 @@ class LD2401ControlManager:
             # A duplicate, replayed, malformed or unauthenticated frame.
             return
         _LOGGER.debug("Accepted fresh BTHome counter from %s", self.address)
-        self._accepted_frame(service_info.source)
+        self._accepted_frame(service_info.source, received=service_info.time)
 
-    async def _wait_for_new_counter(self, after_counter: int) -> int:
-        """Wait for a recent counter newer than the one already used or observed."""
+    async def _wait_for_usable_counter(self, key: bytes, selection: int) -> int | None:
+        """Use a recent unused counter after the startup/key baseline, or wait."""
         loop = asyncio.get_running_loop()
         deadline = loop.time() + COUNTER_WAIT_TIMEOUT
         while True:
+            if selection != self._selection_id:
+                return None
             if self._stopped:
                 raise HomeAssistantError("LD2401 control was unloaded.")
+            if self._refresh_bindkey() != key:
+                raise HomeAssistantError("The Bindkey changed while preparing the command; try again.")
             self._counter_changed.clear()
             counter = self.frames.counter
-            age = time.monotonic() - self._last_received
             if (
                 counter is not None
-                and counter > after_counter
-                and age <= COUNTER_MAX_AGE
+                and self._counter_baseline is not None
+                and counter > max(self._counter_baseline, self._last_sent_counter)
+                and self._counter_is_recent()
+                and self._last_received is not None
+                and self._last_received >= self._counter_epoch_started
             ):
                 return counter
 
@@ -405,17 +430,19 @@ class LD2401ControlManager:
     async def async_send_mode(self, mode: int) -> None:
         """Send one authenticated mode command through the ESPHome broadcast action."""
         selection = self._selection_id
+        key = self.frames.bindkey
         async with self._send_lock:
             if selection != self._selection_id:
                 return
-            # Require a counter received after this command. A cached advertisement
-            # may already have authorized an earlier command before HA reloaded.
-            after_counter = max(self._last_sent_counter, self.frames.counter or 0)
-            counter = await self._wait_for_new_counter(after_counter)
-            if selection != self._selection_id:
+            # Only wait the remaining interval since the previous service call.
+            # Pick the counter and sender afterwards, so neither ages in a queue.
+            remaining = self._next_send_at - time.monotonic()
+            if remaining > 0:
+                await asyncio.sleep(remaining)
+            counter = await self._wait_for_usable_counter(key, selection)
+            if counter is None:
                 return
-            key = self._refresh_bindkey()
-            if self.frames.counter != counter:
+            if self._refresh_bindkey() != key or self.frames.counter != counter:
                 raise HomeAssistantError("The Bindkey changed while preparing the command; try again.")
             frame = make_control_frame(key, self.address, counter, mode)
             if (action := self._async_resolve_action()) is None:
@@ -429,6 +456,7 @@ class LD2401ControlManager:
             # Reserve the counter before handing the frame to ESPHome. If delivery becomes
             # ambiguous, skip ahead to the next authenticated BTHome frame rather than replay.
             self._last_sent_counter = counter
+            self._next_send_at = time.monotonic() + ESP_ACTION_TIME
             if self._requested_mode == mode:
                 self._request_counter = counter
                 self._request_action = action
@@ -452,13 +480,13 @@ class LD2401ControlManager:
                     "Home Assistant could not call the ESPHome broadcast action."
                 ) from err
             self._last_sender_action = action
-            await asyncio.sleep(ESP_ACTION_TIME)
 
     async def async_select_mode(self, mode: int) -> None:
         """Display the selected mode immediately and reconcile future feedback."""
         if not self.available:
             raise HomeAssistantError("No recent OUT mode feedback is available. Firmware 26092431 is required.")
         self._selection_id += 1
+        self._counter_changed.set()  # wake a superseded command waiting for a frame
         selection = self._selection_id
         self._requested_mode = mode
         self._request_counter = None

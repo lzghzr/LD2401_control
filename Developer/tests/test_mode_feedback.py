@@ -106,8 +106,9 @@ def manager():
 
 
 def feed(value, counter, hold=0, level=0):
-    assert value.frames.update(advertisement(counter, hold, level))
-    value._accepted_frame()
+    info = advertisement(counter, hold, level)
+    assert value.frames.update(info)
+    value._accepted_frame(info.source, received=info.time)
 
 
 def test_shared_reload_fallback_and_rotation():

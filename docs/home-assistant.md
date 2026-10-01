@@ -1,6 +1,6 @@
 # LD2401 OUT Control for Home Assistant
 
-Integration **1.1.3** provides one **OUT mode** select entity with three options:
+Integration **1.1.4** provides one **OUT mode** select entity with three options:
 `auto`, `hold_low`, and `hold_high`. Suggested entity id:
 `select.ld2401_<short address>_out_mode`. The id and unique id are anchored on the
 module address, so device renaming and translations do not change them.
@@ -120,7 +120,28 @@ the settling window, HA logs `OUT mode feedback did not converge` with the
 chosen action, requested/observed mode and counter. Debug logs record the selected
 sender, RSSI and reception age without logging the Bindkey or control payload.
 
-After a selection, the integration waits for a new authenticated counter that arrived after the selection, so a cached advertisement cannot accidentally authorize a repeated command after a Home Assistant reload. It reports an error if it has not received a fresh frame or no ESPHome action is available, and it serializes commands with a 2.1-second minimum interval between transmissions.
+Version 1.1.4 normally sends using the latest authenticated cached counter if
+its actual reception is at most **45 seconds** old and this manager has not
+used it for a send attempt. The first accepted counter after startup/reload or
+key rotation establishes a baseline; sending requires a higher counter whose
+reception timestamp is at or after that startup/key epoch. Receiving several
+cached updates from before the epoch cannot enable this fast path. Missing,
+non-finite or future timestamps cannot authorize a command. A used or expired
+counter causes a wait of up to **five seconds** for a usable frame.
+
+Every send attempt reserves its counter before calling ESPHome, including
+ambiguous failures. Commands remain serialized. The **2.1-second minimum is
+between HA ESPHome call dispatches**: subsequent calls wait only the remaining
+interval. A call made after that interval adds no cooldown, and the first call
+does not sleep after dispatch. Action completion reports the ESPHome call result;
+physical execution still requires matching authenticated feedback. The settling
+window starts after the call returns, unless matching feedback already arrived.
+
+Counter age is checked again and the sender is resolved from the current scanner
+caches after any interval wait. The 30-second sender window, valid RSSI filter,
+3 dB signal band and five-second sender hysteresis retain their existing rules.
+No additional decryption is introduced. The integration reports an error if no
+usable authenticated counter or ESPHome sender is available.
 
 The node answers each call through `api.respond`, so a frame it refuses (bad payload or BLE not active) makes the selection fail with that reason instead of silently reporting success. Nodes without that answer — an older ESPHome config — are still supported: the call is then simply fire-and-forget.
 

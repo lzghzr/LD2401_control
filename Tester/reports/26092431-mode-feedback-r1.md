@@ -5,6 +5,7 @@
 - 固件：`LD2401_2.50_26092431.ufw`，607840 字节，SHA-256 `367df6fde866918147b5ad5e61257e0cc8db00fecd872a2a6390885b9565872a`
 - 被测二进制与身份的绑定：实测期间 HEAD 为 `343a0d2`；测试结束后 HEAD 前移到 `7fa6a7a`（Developer 针对审计反馈的修复）。**同一 UFW 字节已在干净 `7fa6a7a` 上用 `--release` 复现**（§1.1），因此本报告的实机结论对两个 commit 同样成立；交付身份由维护者决定。
 - 提交签名与 SHA 映射：交付提交按用户要求用其 SSH 密钥（ed25519，指纹 `SHA256:quW1UdiOatEuBDQafx/xKS6YbhSP1QZSFmtOwWK3hgI`）重新签名，重签名不改 tree。本报告引用的 commit 为签名后 SHA：`2603db5→343a0d2`、`2143a11→7fa6a7a`；重签名前的提交由保留 tag `archive/26092431-pre-signature` 追溯。§1.1 的本地命令与证据目录保留当时使用的名称。
+- HA 侧提交签名与 SHA 映射：§7 涉及的三个 HA 候选同样已重签名并进入 `main`：`37d105c→969de8f`、`7ca4538→8ae3932`、`67ea6ac→f854165`；重签名不改 tree，重签名前的提交由 tag `archive/ha-1.1.3-pre-signature` 追溯，详见审计报告 §16。
 - HA 集成：`ld2401_control`；真实 HA 2026.9.4 实例上的集成测试覆盖 **1.1.0 / 1.1.1 / 1.1.3**（§7）
 - 测试时间：2026-10-01
 - 被测设备：一台实机模块（显示地址脱敏为 `82:CF:…:09:FB`），刷写前运行 2.50.26092430；报告收尾时设备仍运行 2.50.26092431，密钥未变
@@ -187,7 +188,7 @@ parity: (even → voltage) 19, (odd → distance) 23
 | 项目 | 值 |
 | --- | --- |
 | Home Assistant | 2026.9.4（服务器部署） |
-| 被测集成版本 | `ld2401_control` **1.1.0 → 1.1.1 → 1.1.3**（对应 commit `343a0d2` / `37d105c` / `67ea6ac`） |
+| 被测集成版本 | `ld2401_control` **1.1.0 → 1.1.1 → 1.1.3**（对应 commit `343a0d2` / `969de8f` / `f854165`） |
 | 部署方式 | `Tester/tools/ha_deploy.py` 经 `ha_file_explorer` 的 HTTP API 拉取 / 推送 / 校验 |
 | 逐版本校验 | 每次部署后 12 个文件与对应 commit **逐字节一致**（`identical=12 differ=0 missing=0 extra=0`） |
 | 生效方式 | 自定义组件改动需重启 HA；重启前先 `pull` 备份，可回滚 |

@@ -295,9 +295,9 @@ Developer 提交 `7fa6a7ad2e8d3ccd6562268489a69485603a1402`「Fix audit feedback
 
 我复核了 §12：`2603db5` 与 `343a0d2`、`2143a11` 与 `7fa6a7a` 的 tree 哈希逐一相同（`6c97b6b0…`、`9a9d45a7…`），重签名未改动任何内容；tag `archive/26092431-pre-signature` 指向 `ad1b43c`；release 目录 `build/26092431-mode-feedback-r1-release-52cfcbc` 的报告为 `git_commit=52cfcbc`、`git_dirty=false`，其 UFW 与冻结的 r1 逐字节相同。§12 的交付声明成立。
 
-## 13. HA 集成 1.1.1 审计（commit `37d105c`，2026-10-01 补记）
+## 13. HA 集成 1.1.1 审计（commit `969de8f`，2026-10-01 补记）
 
-审计对象：HA 集成 **1.1.1**，Build ID `ha-1.1.1-sender-routing-r1`，commit `37d105cf5eb487ce8b8aff371cd7e0009d956e57`（分支 `codex/ha-sender-routing`，**未签名**，未进入 `main`），交接包 `ld2401_control-1.1.1.zip` SHA-256 `0a18ee8458ebecae8098729b2560d9c81408dce3620cdf034ad7f063f35770bc`。本次只改动 HA 侧发送节点选择与超时反馈；§1–§12 的固件结论继续适用。
+审计对象：HA 集成 **1.1.1**，Build ID `ha-1.1.1-sender-routing-r1`，commit `969de8f5992209ab1bf978258888aa26f34954f8`（分支 `codex/ha-sender-routing`；由审计时的 `37d105c` 重签名而来，tree 相同，见 §16），交接包 `ld2401_control-1.1.1.zip` SHA-256 `0a18ee8458ebecae8098729b2560d9c81408dce3620cdf034ad7f063f35770bc`。本次只改动 HA 侧发送节点选择与超时反馈；§1–§12 的固件结论继续适用。
 
 ### 13.1 身份核验
 
@@ -317,7 +317,7 @@ Developer 的判断是：原解析器拿 `scanner.name` / `scanner.source` 去�
 ```text
 真库格式化：adapter_human_name('z-near', '02:00:00:00:10:01') == 'z-near (02:00:00:00:10:01)'
 
-修复前（52cfcbc 副本）             修复后（37d105c）
+修复前（52cfcbc 副本）             修复后（969de8f）
 decorated_name_and_mac_source  → a_far   (错)     → z_near  (对)
 strongest_receiver             → a_far   (错)     → m_far   (对, rssi -40)
 missing_rssi_single            → a_far   (错)     → z_near  (对)
@@ -343,7 +343,7 @@ missing_rssi_single            → a_far   (错)     → z_near  (对)
   修复前代码不排序，因此不会崩。异常沿 `async_send_mode` 传出，`async_select_mode` 会清理请求并重新抛出，用户看到服务调用失败。bleak 把 `AdvertisementData.rssi` 标注为 `int`，但 habluetooth 明确为 `None` 设防，说明该形态可达（至少 pyobjc 后端）。
 - 后果二（静默错路由）：`rssi=0` 不是有效信号强度（HA/habluetooth 视其为“无信号”），但 `reverse=True` 会把 0 排在 -40 之前。实测 `zero_rssi_ranks_best`：`a_far(rssi=0)` 胜过 `m_far(rssi=-40)`，即广播被发给并非最强的节点——**症状与本次修复要解决的原始缺陷同类**（命令到不了雷达、选中项回弹）。我无法从离线证据判断 `rssi=0` 在实际部署中的出现频率，故记为中低而非高。
 - 建议：与库保持一致，例如 `rssi = device.advertisement.rssi or -127`（或 `NO_RSSI_VALUE`）后再排序，同时消除崩溃与错序。
-- **后续状态（commit `7ca4538` → `67ea6ac`）**：`None` / NaN 在 1.1.2 已改为被过滤而不再参与比较，崩溃消除；`rssi=0` 在 1.1.3 被追加排除（`or rssi == 0`），不再抢占最强带，也不能作为唯一候选或经迟滞保留。两项均由独立工具断言验证，**AUD-06 关闭**，详见 §14.4 与 §15.2。
+- **后续状态（commit `8ae3932` → `f854165`）**：`None` / NaN 在 1.1.2 已改为被过滤而不再参与比较，崩溃消除；`rssi=0` 在 1.1.3 被追加排除（`or rssi == 0`），不再抢占最强带，也不能作为唯一候选或经迟滞保留。两项均由独立工具断言验证，**AUD-06 关闭**，详见 §14.4 与 §15.2。
 
 #### AUD-07（低，Maintainer）HA 集成版本声明在四处不一致
 
@@ -358,7 +358,7 @@ missing_rssi_single            → a_far   (错)     → z_near  (对)
 
 #### AUD-08（低，Developer / 维护者）1.1.1 候选尚未进入签名交付链
 
-`37d105c` 未签名且只在 `codex/ha-sender-routing` 分支上，`main` 仍停在 `52cfcbc`；`handoff.json` 也如实标注 `commit_signing: unsigned`、`live_ha_verified: false`。若要把 1.1.1 作为交付，需要与固件交付同样的处理：合并到 `main`、签名、从干净提交产出绑定报告。
+审计时 `37d105c` 未签名且只在 `codex/ha-sender-routing` 分支上，`main` 停在 `52cfcbc`；`handoff.json` 也如实标注 `commit_signing: unsigned`、`live_ha_verified: false`。若要把 1.1.1 作为交付，需要与固件交付同样的处理：合并到 `main`、签名、从干净提交产出绑定报告。
 
 ### 13.5 测试与整体回归复核
 
@@ -380,9 +380,9 @@ missing_rssi_single            → a_far   (错)     → z_near  (对)
 - **AUD-07 / AUD-08** 为版本声明与交付链的记录问题，属维护者范围；
 - 固件与 §1–§12 结论不受影响；实机 HA 验证仍待用户环境完成。
 
-## 14. HA 集成 1.1.2 审计（commit `7ca4538`，2026-10-01 补记）
+## 14. HA 集成 1.1.2 审计（commit `8ae3932`，2026-10-01 补记）
 
-审计对象：HA 集成 **1.1.2**，Build ID `ha-1.1.2-signal-routing-r1`，commit `7ca453873e83a884c97a8f5c10af6fc47c28744c`（分支 `codex/ha-sender-routing`，**未签名**，未进入 `main`），交接包 `ld2401_control-1.1.2.zip` SHA-256 `225034549528cf94384f763e18b1995e81dc8df1a0b33469fa86828893db3100`。本次把自动发送节点选择从「最近认证源 + RSSI」改为「本雷达的新鲜接收 + RSSI 频带 + 迟滞」，并去掉字母序回落。固件与 ESPHome 未改动（该 commit 未触及 `Developer/src`、`Developer/linker`、`esphome/`）。
+审计对象：HA 集成 **1.1.2**，Build ID `ha-1.1.2-signal-routing-r1`，commit `8ae3932b7b52937a122557e01245dbb4a49ea28a`（分支 `codex/ha-sender-routing`；由审计时的 `7ca4538` 重签名而来，tree 相同，见 §16），交接包 `ld2401_control-1.1.2.zip` SHA-256 `225034549528cf94384f763e18b1995e81dc8df1a0b33469fa86828893db3100`。本次把自动发送节点选择从「最近认证源 + RSSI」改为「本雷达的新鲜接收 + RSSI 频带 + 迟滞」，并去掉字母序回落。固件与 ESPHome 未改动（该 commit 未触及 `Developer/src`、`Developer/linker`、`esphome/`）。
 
 ### 14.1 身份核验
 
@@ -405,7 +405,7 @@ missing_rssi_single            → a_far   (错)     → z_near  (对)
 
 ### 14.3 行为复核（同一工具、同一场景集，对三个版本对照）
 
-`Auditor/tools/ha_routing_check.py` 已升级到 1.1.2 的 API 表面（每地址时间戳、`adapter`、RSSI），同一组 14 个场景分别跑 1.1.0（`52cfcbc` 副本）、1.1.1（`37d105c` 副本）与 1.1.2：
+`Auditor/tools/ha_routing_check.py` 已升级到 1.1.2 的 API 表面（每地址时间戳、`adapter`、RSSI），同一组 14 个场景分别跑 1.1.0（`52cfcbc` 副本）、1.1.1（`969de8f` 副本）与 1.1.2：
 
 | 场景 | 1.1.0 | 1.1.1 | 1.1.2 |
 | --- | --- | --- | --- |
@@ -455,12 +455,12 @@ Developer 未在测试中覆盖 `rssi=0`（参数化只含 `-40`、`None`、NaN�
 - 自动选路的重做方向正确：以本雷达的**新鲜接收**为主、RSSI 为频带、加迟滞，比 1.1.1 的“聚合源优先”更贴近“谁能听见雷达”；关键 API 与时钟在 7.1.2 与最低版本 5.8.0 上都成立，30 秒上限与越界保护也正确；
 - **AUD-06 的 `None` 崩溃已消除**，但 **`rssi=0` 归一缺失仍未修**（AUD-06 保留为未关闭项），建议按库约定一行修正后再交付；
 - fail-closed 取代字母序回落是有意取舍且已如实文档化，不再计入问题；
-- **AUD-07 / AUD-08 仍然有效**：HA 版本声明（`AGENTS.md`、`metadata/firmware-26092431.json`）尚未同步到 1.1.2，`7ca4538` 依旧未签名且未在 `main` 上；
+- **AUD-07 / AUD-08（审计时仍然有效）**：HA 版本声明（`AGENTS.md`、`metadata/firmware-26092431.json`）当时尚未同步到 1.1.2，`7ca4538` 当时未签名且不在 `main` 上；
 - 固件与 §1–§13 结论不受影响；1.1.2 的实机安装与物理 OUT 验证仍待用户环境完成。
 
-## 15. HA 集成 1.1.3 审计（commit `67ea6ac`，2026-10-01 补记）
+## 15. HA 集成 1.1.3 审计（commit `f854165`，2026-10-01 补记）
 
-审计对象：HA 集成 **1.1.3**，Build ID `ha-1.1.3-rssi-correction-r1`，commit `67ea6ac7413f261efe235dfde860736040b1599b`（分支 `codex/ha-sender-routing`，**未签名**，未进入 `main`），交接包 `ld2401_control-1.1.3.zip` SHA-256 `a34a65c8446284db98b4c05d2c9e465c345eeba949252db93ad2b5aae03fecf9`。本次只针对 AUD-06 的第二半（未知的 `rssi=0`）。固件与 ESPHome 未改动。
+审计对象：HA 集成 **1.1.3**，Build ID `ha-1.1.3-rssi-correction-r1`，commit `f854165b61041712e4c413eade93daa97d04af5f`（分支 `codex/ha-sender-routing`；由审计时的 `67ea6ac` 重签名而来，tree 相同，见 §16），交接包 `ld2401_control-1.1.3.zip` SHA-256 `a34a65c8446284db98b4c05d2c9e465c345eeba949252db93ad2b5aae03fecf9`。本次只针对 AUD-06 的第二半（未知的 `rssi=0`）。固件与 ESPHome 未改动。
 
 ### 15.1 身份核验
 
@@ -506,5 +506,25 @@ Developer 未在测试中覆盖 `rssi=0`（参数化只含 `-40`、`None`、NaN�
 - AUD-06 已完整修复并经独立复核，自动选路现在与 HA/habluetooth 对“未知 RSSI”的约定一致；
 - 未发现新的实现缺陷；
 - **AUD-07 仍然有效且差距扩大**：`AGENTS.md` 与 `metadata/firmware-26092431.json` 的 HA 版本仍是 **1.1.0**，而 `manifest.json`、README、docs、CHANGELOG 已到 1.1.3；
-- **AUD-08 仍然有效**：`67ea6ac` 未签名、未进入 `main`；1.1.1 / 1.1.2 / 1.1.3 三个候选都只有本地未签名提交，若要交付需按固件同一流程处理（合并、签名、从干净提交出报告）；
+- **AUD-08（审计时仍然有效）**：`67ea6ac` 当时未签名、未进入 `main`；1.1.1 / 1.1.2 / 1.1.3 三个候选当时都只有本地未签名提交，交付需按固件同一流程处理（合并、签名、从干净提交出报告）；
 - 固件与 §1–§14 结论不受影响；1.1.3 的实机安装与物理 OUT 验证仍待用户环境完成。
+
+## 16. HA 交付提交重签名与 AUD-07 / AUD-08 结案（维护者后续记录，2026-10-01）
+
+本节由维护者补记，不改写 §13–§15 的审计结论与证据。
+
+§13–§15 审计的三个候选（1.1.1 / 1.1.2 / 1.1.3）按用户要求用其 SSH 密钥（ed25519，指纹 `SHA256:quW1UdiOatEuBDQafx/xKS6YbhSP1QZSFmtOwWK3hgI`）重新签名，并合并到 `main`。重签名只改提交对象，不改内容：每个提交的 tree 哈希与重签名前逐一致（`795c2777…`、`5668eedb…`、`a52f39aa…`），因此 §13–§15 的全部测试与审计结论继续成立。
+
+| 内容 | 重签名前（未签名） | 重签名后（已签名） |
+| --- | --- | --- |
+| HA 1.1.1 发送节点选择修复 | `37d105c` | `969de8f` |
+| HA 1.1.2 新鲜接收 + RSSI 频带 + 迟滞 | `7ca4538` | `8ae3932` |
+| HA 1.1.3 排除未知 RSSI 0（AUD-06） | `67ea6ac` | `f854165` |
+| 本轮审计与实测记录提交 | `670a1d6` | `7408030` |
+
+本报告正文的 commit 引用已更新为签名后的 SHA。描述候选「未签名、未进入 `main`」的句子保留其审计当时的事实，并改回重签名前的 SHA，以免与重签名后的提交属性矛盾。重签名前的提交可通过保留 tag `archive/ha-1.1.3-pre-signature`（指向 `670a1d6`）追溯，祖先链完整。
+
+HA 交接包的 ZIP 内容未随重签名改变（`custom_components/ld2401_control/` 未被改动），三个 ZIP 的 SHA-256 仍为各版本记录值。
+
+- **AUD-07 关闭**：`AGENTS.md` 与 `metadata/firmware-26092431.json` 的 HA 集成版本已同步到 1.1.3，并增列 `ha_integration_versions_verified`（`1.1.0`、`1.1.1`、`1.1.3`）。
+- **AUD-08 关闭**：三个候选均已重签名并进入 `main`。报告开头「AUD-07 / AUD-08 仍待维护者处理」以及 §13.6 / §14.7 / §15.5 的相关表述为审计当时的记录，现由本节取代。

@@ -8,7 +8,7 @@
 
 | 报告 | 对象 |
 | --- | --- |
-| [26092431-mode-feedback-r1](reports/26092431-mode-feedback-r1.md) | 固件 commit `343a0d2` / Build ID `26092431-mode-feedback-r1` / UFW `367df6fd…`；HA 侧发送节点选择复核见该报告 §13（1.1.1，`37d105c`）、§14（1.1.2，`7ca4538`）与 §15（1.1.3，`67ea6ac`） |
+| [26092431-mode-feedback-r1](reports/26092431-mode-feedback-r1.md) | 固件 commit `343a0d2` / Build ID `26092431-mode-feedback-r1` / UFW `367df6fd…`；HA 侧发送节点选择复核见该报告 §13（1.1.1，`969de8f`）、§14（1.1.2，`8ae3932`）与 §15（1.1.3，`f854165`） |
 
 ## 专用工具
 

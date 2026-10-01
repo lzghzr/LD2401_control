@@ -1,6 +1,6 @@
 # LD2401 OUT Control for Home Assistant
 
-Integration **1.1.2** provides one **OUT mode** select entity with three options:
+Integration **1.1.3** provides one **OUT mode** select entity with three options:
 `auto`, `hold_low`, and `hold_high`. Suggested entity id:
 `select.ld2401_<short address>_out_mode`. The id and unique id are anchored on the
 module address, so device renaming and translations do not change them.
@@ -92,6 +92,10 @@ ESPHome nodes expose the broadcast through an action named **`ld2401_control_bro
 2. Otherwise, match each scanner's `adapter` (ESPHome node name) to an available `esphome.<node>_ld2401_control_broadcast` action. Keep only nodes whose own reception timestamp for this radar is at most **30 seconds** old, including installations with only one sender.
 3. Find the strongest RSSI among those nodes. Within **3 dB** of that signal, choose the newest reception; retain the previously used sender if it is in that band and its reception lags the newest by at most **five seconds**. Identical signal/time ties use stable action-name ordering. Sender history updates after a successful ESPHome action call; it does not imply physical delivery confirmation.
 
+Unknown RSSI (`0` or `None`) and non-finite readings are excluded from automatic
+ranking and hysteresis. If all matching recent nodes have unknown RSSI, automatic
+selection fails; an explicitly configured action remains available.
+
 The timestamp comes from the public per-address `discovered_device_timestamps`
 API. HA's aggregated reception source does not receive extra routing priority.
 Ranking reads HA's cached scanner data only when sending a command; it adds no
@@ -104,7 +108,8 @@ fails with a clear error. Check reception or specify a sender explicitly in
 **Reconfigure** only sets this action; the Bindkey needs no attention there.
 
 Version 1.1.2 uses fresh reception and signal strength for automatic routing in
-installations with multiple ESPHome nodes. Upgrade the custom integration and
+installations with multiple ESPHome nodes. Version 1.1.3 also excludes unknown
+RSSI 0 so it cannot outrank a valid received signal. Upgrade the custom integration and
 restart HA; firmware 26092431 and the ESPHome broadcast action do not need an update.
 To select a
 sender explicitly, enter its complete `esphome.<node>_ld2401_control_broadcast`

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.3
+
+- Exclude unknown RSSI 0 from automatic sender ranking and hysteresis (AUD-06).
+- Add zero-RSSI regression checks for single senders, competing senders and all three select commands.
+
 ## 1.1.2
 
 - Select automatic ESPHome senders from per-radar receptions within 30 seconds, then compare RSSI.

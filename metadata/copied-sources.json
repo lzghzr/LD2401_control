@@ -29,12 +29,12 @@
     {
       "path": "custom_components/ld2401_control/coordinator.py",
       "sha256": "2cc9d926598dda1cd9c301d9de88b38a55f06656b0b1fd6719b32e500e5293f5",
-      "distribution_sha256": "a432e60381b37406dc525cc18de7c3235a5e0a8f8dc3c9a0d1abb96c5d45d981"
+      "distribution_sha256": "004cfc82f9b8722478aac0ec5969447733fde751bed236d22298ed2cb6d312a1"
     },
     {
       "path": "custom_components/ld2401_control/manifest.json",
       "sha256": "98deb34a9fd1f1ac5d323ae9488319fedda12df56668d763cd2bbfcf29b7657d",
-      "distribution_sha256": "289d3e4de3be8ed5fc672ee9dc836365eea448cd8c7d2a8b84278c0242c9021b"
+      "distribution_sha256": "4244130635d6d6b9f86d6d52fc37d0e8e13e831928b1d7aa5890ee48c1a9e9f0"
     },
     {
       "path": "custom_components/ld2401_control/mirror.py",

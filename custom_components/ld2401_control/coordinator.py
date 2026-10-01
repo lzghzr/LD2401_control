@@ -280,18 +280,21 @@ class LD2401ControlManager:
             # scanner-wide last-detection time could belong to another device.
             received = getattr(device.scanner, 'discovered_device_timestamps', {}).get(self.address)
             rssi = device.advertisement.rssi
+            # HA treats RSSI 0 as unknown. Like None/non-finite readings, it
+            # must not enter the strongest-signal band or retain a sender.
             if (
                 not isinstance(received, (int, float))
                 or not math.isfinite(received)
                 or not 0 <= now - received <= SENDER_MAX_AGE
                 or not isinstance(rssi, (int, float))
                 or not math.isfinite(rssi)
+                or rssi == 0
             ):
                 continue
             receivers.append(_SenderCandidate(action, rssi, received))
         if not receivers:
             raise HomeAssistantError(
-                "No ESPHome sender has received this radar within the last "
+                "No ESPHome sender has usable RSSI for this radar within the last "
                 f"{SENDER_MAX_AGE:g} seconds. Check Bluetooth reception, or set "
                 "a specific action in the integration's reconfigure flow."
             )

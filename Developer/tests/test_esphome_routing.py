@@ -112,7 +112,7 @@ def test_stale_strong_signal_is_filtered_before_rssi(monkeypatch, age, selected)
 
 
 @pytest.mark.parametrize('rssi,received', [(-40, None), (-40, 69.9), (-40, 100.1),
-                                         (-40, float('nan')), (None, 99.0), (float('nan'), 99.0)])
+                                         (-40, float('nan')), (None, 99.0), (0, 99.0), (float('nan'), 99.0)])
 def test_single_sender_needs_valid_recent_radar_observation(monkeypatch, rssi, received):
     value, hass, _ = manager()
     services(hass, ['only_ld2401_control_broadcast'])
@@ -160,6 +160,25 @@ def test_no_control_actions_remains_distinct_from_no_fresh_receiver():
     assert value._async_resolve_action() is None
 
 
+@pytest.mark.parametrize('previous_unknown', [False, True])
+def test_zero_rssi_cannot_outrank_valid_signal_or_survive_sender_hysteresis(monkeypatch, previous_unknown):
+    value, hass, _ = manager()
+    services(hass, ['a_unknown_ld2401_control_broadcast', 'm_valid_ld2401_control_broadcast'])
+    monkeypatch.setattr(manager_module.time, 'monotonic', lambda: 100.0)
+    heard = [
+        SimpleNamespace(scanner=sender('a-unknown', '02:00:00:00:10:01', 100),
+                        advertisement=SimpleNamespace(rssi=0)),
+        SimpleNamespace(scanner=sender('m-valid', '02:00:00:00:10:02', 99),
+                        advertisement=SimpleNamespace(rssi=-40)),
+    ]
+    if previous_unknown:
+        value._last_sender_action = ('esphome', 'a_unknown_ld2401_control_broadcast')
+    monkeypatch.setattr(bluetooth, 'async_scanner_devices_by_address', lambda *_args: heard)
+    for _ in range(2):
+        assert value._async_resolve_action() == ('esphome', 'm_valid_ld2401_control_broadcast')
+        heard.reverse()
+
+
 def test_real_remote_scanners_expose_independent_timestamp_and_rssi(monkeypatch):
     value, hass, _ = manager()
     services(hass, ['old_ld2401_control_broadcast', 'near_ld2401_control_broadcast'])
@@ -181,7 +200,8 @@ def test_real_remote_scanners_expose_independent_timestamp_and_rssi(monkeypatch)
 
 
 @pytest.mark.parametrize('option,mode', [('hold_low', 0), ('hold_high', 1), ('auto', 2)])
-def test_select_entity_routes_authenticated_command_and_consumes_feedback(monkeypatch, option, mode):
+@pytest.mark.parametrize('far_rssi', [-75, 0])
+def test_select_entity_routes_authenticated_command_and_consumes_feedback(monkeypatch, option, mode, far_rssi):
     async def scenario():
         value, hass, owner = manager()
         names = [f'{name}_ld2401_control_broadcast' for name in ('a_far', 'm_far', 'z_near')]
@@ -189,7 +209,7 @@ def test_select_entity_routes_authenticated_command_and_consumes_feedback(monkey
         near = sender('z-near', '02:00:00:00:10:01')
         far = sender('a-far', '02:00:00:00:10:02')
         monkeypatch.setattr(bluetooth, 'async_scanner_devices_by_address',
-                            lambda *_args: [SimpleNamespace(scanner=far, advertisement=SimpleNamespace(rssi=-75)),
+                            lambda *_args: [SimpleNamespace(scanner=far, advertisement=SimpleNamespace(rssi=far_rssi)),
                                             SimpleNamespace(scanner=near, advertisement=SimpleNamespace(rssi=-40))])
         value._ensure_shared()
         entity = select_module.LD2401OutModeSelect(value)

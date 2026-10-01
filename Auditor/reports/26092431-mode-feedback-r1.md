@@ -1,7 +1,7 @@
 # LD2401 26092431 独立审计报告
 
 - 角色：Auditor
-- 审计对象：commit `2603db5471e0e56a36ceb896a7ad50b3c16e3c4e`（分支 `codex/out-mode-feedback`），Build ID `26092431-mode-feedback-r1`；审计后修复复核见 §11（commit `2143a11`）
+- 审计对象：commit `343a0d262a4a0960f27aca3da02dc3f40298345c`（分支 `codex/out-mode-feedback`），Build ID `26092431-mode-feedback-r1`；审计后修复复核见 §11（commit `7fa6a7a`）
 - 固件：`LD2401_2.50_26092431.ufw`，607840 字节，SHA-256 `367df6fde866918147b5ad5e61257e0cc8db00fecd872a2a6390885b9565872a`
 - HA 集成：`ld2401_control` 1.1.0
 - 审计时间：2026-10-01
@@ -9,7 +9,7 @@
 
 ## 1. 身份与输入核验
 
-审计开始时工作树为 `2603db5`，`git status --porcelain` 为空。`build/`、`local/` 为 Git 忽略目录，本次审计未改写任何已交接产物（复核后候选包与构建报告哈希不变；AUD-02 / AUD-04 的后续修复同样未触及这两份产物）。
+审计开始时工作树为 `343a0d2`，`git status --porcelain` 为空。`build/`、`local/` 为 Git 忽略目录，本次审计未改写任何已交接产物（复核后候选包与构建报告哈希不变；AUD-02 / AUD-04 的后续修复同样未触及这两份产物）。
 
 | 对象 | 记录值 | 实测 |
 | --- | --- | --- |
@@ -154,7 +154,7 @@ PASS: 80 actual C telemetry/CCM fixtures; AD bounds, MIC, object order and measu
   ```
 
 - 建议：断言可观测行为（`bindkey_verified`、`decryption_failed`、是否接受）而不是替换私有方法；若保留计数，则按签名自适应。修正后重新记录版本声明。
-- **后续状态（commit `2143a11`）**：已按建议重写为 `test_shared_updates_use_authenticated_parser`——断言 `bindkey_verified`/`decryption_failed`/已接受更新/认证 counter/模式，并覆盖一次 MIC 篡改后恢复；不再替换或计数私有解密方法。CI 改为 `bthome-ble` 3.9.1 与 3.24.0 的版本矩阵并安装真实 `home-assistant-bluetooth` 兼容包。我复测：两版本各 22 通过（原 11 HA + 新增 11 布局测试）。详见 §11。
+- **后续状态（commit `7fa6a7a`）**：已按建议重写为 `test_shared_updates_use_authenticated_parser`——断言 `bindkey_verified`/`decryption_failed`/已接受更新/认证 counter/模式，并覆盖一次 MIC 篡改后恢复；不再替换或计数私有解密方法。CI 改为 `bthome-ble` 3.9.1 与 3.24.0 的版本矩阵并安装真实 `home-assistant-bluetooth` 兼容包。我复测：两版本各 22 通过（原 11 HA + 新增 11 布局测试）。详见 §11。
 
 ### AUD-02（中高，Tester 侧准备度）Tester 解码器不支持新对象，26092431 帧全部无法解码
 
@@ -167,14 +167,14 @@ PASS: 80 actual C telemetry/CCM fixtures; AD bounds, MIC, object order and measu
 
 - 影响：`decode_records` 会把每一帧记为 error，`main` 返回 1；Tester 无法统计新候选的 counter 速率或核对 `0x0F`。同时 `Tester/tools/check_capture.py` 的合成夹具仍是 13 字节，因此仓库协议检查显示 PASS 而新格式实际不可解码。
 - 建议（Tester 维护范围）：在 `OBJECTS` 增加 `0x0F: ('hold', 1, 1)`，并让离线夹具覆盖 15 / 11 字节两种新布局，以便实机测试阶段能直接产出结论。
-- **后续状态（审计结束后）**：Tester 已在工作树完成该修正——`OBJECTS` 增加 `0x0f: ('hold', 1, 1)`，夹具扩到 5 种明文布局。用同一密钥复测，15 字节帧解出 `hold=1, out_high=1, distance_mm=1230`，11 字节无快照帧解出 `hold=0, voltage_v=3.2, out_high=1`。该修正属于审计对象 `2603db5` 之后的工作树变更，不在本次审计的 commit 内。
+- **后续状态（审计结束后）**：Tester 已在工作树完成该修正——`OBJECTS` 增加 `0x0f: ('hold', 1, 1)`，夹具扩到 5 种明文布局。用同一密钥复测，15 字节帧解出 `hold=1, out_high=1, distance_mm=1230`，11 字节无快照帧解出 `hold=0, voltage_v=3.2, out_high=1`。该修正属于审计对象 `343a0d2` 之后的工作树变更，不在本次审计的 commit 内。
 
 ### AUD-03（低，Developer 报告与文档措辞）`reserved_entries_unchanged=false` 与“验证保留条目”的表述
 
 - `build-report.json` 两个镜像均为 `"reserved_entries_unchanged": false`。核对条目后原因明确：带 `0x10` 标志的条目是 VM 与 PRCT，二者按设计随应用增大而移动；BTIF/EXIF 未移动（`fw_audit.py` 的 `layout.image*.BTIF/EXIF` 检查通过）。
 - 但 `Developer/verification-26092431.md` 称构建器“validates … reserved entries”，而构建器只是记录该字段，未对其断言，也未断言 BTIF/EXIF 不动。
 - 建议：把该字段改为按条目分类（“VM/PRCT 允许移动、BTIF/EXIF 必须不动”）并加上断言，或修正文档表述。
-- **后续状态（commit `2143a11`）**：新增 `flash_layout.check_reserved_layout()`，逐条目断言元数据（`header`/`flags`/`reserved`/`last`/`data_crc`）一致，并按策略断言几何：VM 起点等于固定边界且末端保持，PRCT 从 0 到 VM 起点，BTIF/EXIF 偏移与大小不变；报告字段改为 `reserved_layout_validated` 与 `reserved_entry_checks`（含 before/after 坐标）。另把 `OUTPUT.write_bytes()` 移到全部不变量之后，失败构建不再留下输出文件。我复测后续构建报告：`reserved_layout_validated=true`，BTIF 249856/4096、EXIF 253952/4096 前后一致。详见 §11。
+- **后续状态（commit `7fa6a7a`）**：新增 `flash_layout.check_reserved_layout()`，逐条目断言元数据（`header`/`flags`/`reserved`/`last`/`data_crc`）一致，并按策略断言几何：VM 起点等于固定边界且末端保持，PRCT 从 0 到 VM 起点，BTIF/EXIF 偏移与大小不变；报告字段改为 `reserved_layout_validated` 与 `reserved_entry_checks`（含 before/after 坐标）。另把 `OUTPUT.write_bytes()` 移到全部不变量之后，失败构建不再留下输出文件。我复测后续构建报告：`reserved_layout_validated=true`，BTIF 249856/4096、EXIF 253952/4096 前后一致。详见 §11。
 
 ### AUD-04（低，Auditor 工具缺陷）`q32s_xref.py refs` 只识别十六进制操作数——已修复
 
@@ -197,7 +197,7 @@ PASS: 80 actual C telemetry/CCM fixtures; AD bounds, MIC, object order and measu
 
 - 内置 BTHome 集成会把 `0x0F` 解析为 `generic` 二进制传感器，升级后用户会多出一个实体；`docs/home-assistant.md` 的升级小节只说明了按钮实体被移除。
 - 建议：在升级小节补一句“升级固件后内置 BTHome 集成会新增一个 generic 二进制传感器（手动保持）”。
-- **后续状态（commit `2143a11`）**：`docs/home-assistant.md` 升级小节已补充该说明，含 on/off 含义与“选择器结合该传感器状态与物理电平”的关系。
+- **后续状态（commit `7fa6a7a`）**：`docs/home-assistant.md` 升级小节已补充该说明，含 on/off 含义与“选择器结合该传感器状态与物理电平”的关系。
 
 ## 8. 未解决问题与覆盖边界
 
@@ -209,7 +209,7 @@ PASS: 80 actual C telemetry/CCM fixtures; AD bounds, MIC, object order and measu
 4. **真实 HA 实例**：未启动 Home Assistant。`select.py` 在 `__init__` 中预置 `entity_id`、旧按钮实体清理、UI 渲染与自动化迁移均未在真实实例验证；`docs/home-assistant.md` 关于 “HA 2024.8.0 引入 `entry.runtime_data`” 的说法未独立核实。
 5. **依赖版本**：`metadata/firmware-26092431.json` 的 `0x4514`、B2 扫描状态字节 `0x4345` 等含义继承自已验参考候选的反汇编结论；本次仅独立确认了与本次改动直接相关的 `+468 / +5` 两个锚点与 FE 位移差。
 6. **随机数强度、掉电持久化、BLE 时序、OTA/恢复**：沿用既有手册限制，未在本次改动范围内重新验证；本次改动未触及这些路径。
-7. **交接身份的可追溯性**：Build ID 字符串与 `handoff.json` 只存在于被忽略的 `build/` 目录；跟踪的绑定是 `Developer/tools/build.py` 中固定的 `CANDIDATE_SHA` 及其断言（缺省或改动源码时构建失败）。该机制经本次独立重编译验证有效，但 Build ID 名称本身不可从 Git 追溯。修复提交 `2143a11` 尚无 release 构建绑定，交付身份仍停在 `2603db5`（见 §11.4）。
+7. **交接身份的可追溯性**：Build ID 字符串与 `handoff.json` 只存在于被忽略的 `build/` 目录；跟踪的绑定是 `Developer/tools/build.py` 中固定的 `CANDIDATE_SHA` 及其断言（缺省或改动源码时构建失败）。该机制经本次独立重编译验证有效，但 Build ID 名称本身不可从 Git 追溯。修复提交 `7fa6a7a` 尚无 release 构建绑定，交付身份仍停在 `343a0d2`（见 §11.4）。
 
 ## 9. 复现命令
 
@@ -231,29 +231,29 @@ python -B tools/check_repository.py --protocol
 
 ## 10. 结论
 
-对 commit `2603db5` / Build ID `26092431-mode-feedback-r1` / UFW `367df6fd…5872a`：
+对 commit `343a0d2` / Build ID `26092431-mode-feedback-r1` / UFW `367df6fd…5872a`：
 
 - 候选包与源码、工具链、构建报告、两个归档之间的绑定经独立重编译与逐成员比对成立；
 - 封装完整性、双镜像一致、布局不变量、补丁范围、版本字段与执行上限全部通过；
 - 固件改动限定在 `payload.c` 的新增 `0x0F` 对象，未引入新钩子、新 RAM 地址、新栈占用或新调用；
 - 新增对象的位置、顺序、长度与编码经 C 层面 80 用例、机器码逐条核对与 HA 端真实库矩阵确认；
-- 未发现需要 Developer 修复的实现缺陷。AUD-01、AUD-03、AUD-05 已由 Developer 在 `2143a11` 修复并经我复核；AUD-02（Tester 解码器）与 AUD-04（Auditor 工具）亦已修复并复测。
+- 未发现需要 Developer 修复的实现缺陷。AUD-01、AUD-03、AUD-05 已由 Developer 在 `7fa6a7a` 修复并经我复核；AUD-02（Tester 解码器）与 AUD-04（Auditor 工具）亦已修复并复测。
 
-**审计状态说明**：本次审计在干净工作树 `2603db5` 上完成，候选 UFW 与构建报告哈希复核后未变。AUD-01/02/03/04/05 的修复都是审计结束后的变更，按 CONTRIBUTING「保留原始证据、以后续记录更正」的做法记录在各自条目的“后续状态”与 §11，原始结论与证据未改写。修复均未改动固件源码、HA 运行时实现或候选包字节（§11 已独立复核）。`metadata/` 与 `docs/` 属维护者所有，本次仅为 AUD-04 刷新 Auditor 工具身份并登记两个新增工具，其余改动由其他角色作出，请维护者在提交前统一复核。
+**审计状态说明**：本次审计在干净工作树 `343a0d2` 上完成，候选 UFW 与构建报告哈希复核后未变。AUD-01/02/03/04/05 的修复都是审计结束后的变更，按 CONTRIBUTING「保留原始证据、以后续记录更正」的做法记录在各自条目的“后续状态”与 §11，原始结论与证据未改写。修复均未改动固件源码、HA 运行时实现或候选包字节（§11 已独立复核）。`metadata/` 与 `docs/` 属维护者所有，本次仅为 AUD-04 刷新 Auditor 工具身份并登记两个新增工具，其余改动由其他角色作出，请维护者在提交前统一复核。
 
 **本报告不构成实机测试结论**：硬件行为、空口 31 字节帧、真实 HA 渲染与 OTA/恢复路径仍未验证，需由 Tester 在实机上按同一身份记录覆盖。发布决定属于维护者。
 
-## 11. 审计后修复复核（commit `2143a11`，2026-10-01 补记）
+## 11. 审计后修复复核（commit `7fa6a7a`，2026-10-01 补记）
 
-Developer 提交 `2143a1164b30c54ab70d5f39a96beb2686f5f280`「Fix audit feedback tests, reserved layout assertions and upgrade notes」回应本报告 AUD-01 / AUD-03 / AUD-05。我在该 commit 上重新独立验证。
+Developer 提交 `7fa6a7ad2e8d3ccd6562268489a69485603a1402`「Fix audit feedback tests, reserved layout assertions and upgrade notes」回应本报告 AUD-01 / AUD-03 / AUD-05。我在该 commit 上重新独立验证。
 
 ### 11.1 变更范围：不触及固件与 HA 实现
 
-`git diff --name-only 2603db5..2143a11` 仅含 `.github/workflows/check.yml`、`Developer/README.md`、`Developer/tests/*`、`Developer/tools/build.py`、`Developer/tools/flash_layout.py`、`Developer/verification-26092431.md`、`docs/home-assistant.md`。对 `Developer/src`、`Developer/linker`、`custom_components/`、`esphome/`、`metadata/firmware-*` 的过滤结果为空，即本次提交未改动固件源码、链接脚本或 HA 运行时实现。
+`git diff --name-only 343a0d2..7fa6a7a` 仅含 `.github/workflows/check.yml`、`Developer/README.md`、`Developer/tests/*`、`Developer/tools/build.py`、`Developer/tools/flash_layout.py`、`Developer/verification-26092431.md`、`docs/home-assistant.md`。对 `Developer/src`、`Developer/linker`、`custom_components/`、`esphome/`、`metadata/firmware-*` 的过滤结果为空，即本次提交未改动固件源码、链接脚本或 HA 运行时实现。
 
 ### 11.2 固件绑定复核
 
-在 `2143a11` 工作树上重跑 `reproduce_candidate.py`：仍是 20 段已分配节逐字节匹配、尾端 `0x1e2b114`、`8 ok / 0 failed`，候选包哈希仍为 `367df6fd…5872a`。`Developer/tools/build.py` 中 `CANDIDATE_SHA` 未变；Developer 另用新构建器在独立目录/独立 Build ID 产出 `26092431-audit-fixes-dev1`，其 UFW 与 r1 逐字节相同（均 `367df6fd…5872a`），其报告 `reserved_layout_validated=true`。**结论：固件候选字节未因修复提交而改变。**
+在 `7fa6a7a` 工作树上重跑 `reproduce_candidate.py`：仍是 20 段已分配节逐字节匹配、尾端 `0x1e2b114`、`8 ok / 0 failed`，候选包哈希仍为 `367df6fd…5872a`。`Developer/tools/build.py` 中 `CANDIDATE_SHA` 未变；Developer 另用新构建器在独立目录/独立 Build ID 产出 `26092431-audit-fixes-dev1`，其 UFW 与 r1 逐字节相同（均 `367df6fd…5872a`），其报告 `reserved_layout_validated=true`。**结论：固件候选字节未因修复提交而改变。**
 
 ### 11.3 测试复核
 
@@ -267,7 +267,7 @@ Developer 提交 `2143a1164b30c54ab70d5f39a96beb2686f5f280`「Fix audit feedback
 
 ### 11.4 遗留事项
 
-- `26092431-audit-fixes-dev1` 的报告记录 `git_commit=2603db5`、`git_dirty=true`，属开发模式构建，**没有 release 报告绑定 `2143a11`**。按 CONTRIBUTING，已交接候选的 commit 与二进制保持冻结，故当前交付身份仍是 `2603db5` + `367df6fd…`，本报告的审计结论继续有效；若维护者希望交付身份前移到 `2143a11`，需从干净的该 commit 用 `--release` 与新 Build ID 重新构建（当前工作树含 Tester / Auditor 未提交改动，尚不满足干净条件）。
+- `26092431-audit-fixes-dev1` 的报告记录 `git_commit=343a0d2`、`git_dirty=true`，属开发模式构建，**没有 release 报告绑定 `7fa6a7a`**。按 CONTRIBUTING，已交接候选的 commit 与二进制保持冻结，故当前交付身份仍是 `343a0d2` + `367df6fd…`，本报告的审计结论继续有效；若维护者希望交付身份前移到 `7fa6a7a`，需从干净的该 commit 用 `--release` 与新 Build ID 重新构建（当前工作树含 Tester / Auditor 未提交改动，尚不满足干净条件）。
 - `Developer/verification-26092431.md` 已如实更正原 3.9.1 声明（承认原声明有误），与 §7 AUD-01 一致。
 
 ## 12. 交付绑定（维护者后续记录，2026-10-01）
@@ -278,4 +278,17 @@ Developer 提交 `2143a1164b30c54ab70d5f39a96beb2686f5f280`「Fix audit feedback
 
 交付沿用同一 Build ID `26092431-mode-feedback-r1`。本次只更换干净的构建 commit：固件源码、链接脚本、构建参数与工具链字节均未变化，新旧两次构建的 UFW 逐字节相同，20 个已分配节的地址与内容全部一致（ELF 差异仅在节头字符串表中的对象文件路径）。按 CONTRIBUTING「复现同一输入也用独立目录」，输出写入新的空目录，已冻结的 r1 产物未被覆盖；三个角色报告绑定的 Build ID 因此保持不变。
 
-`metadata/firmware-26092431.json` 已更新为交付记录：`hardware_status=USER_CONFIRMED_TESTED`、`independent_audit_status=COMPLETED`，`coverage` 指向本报告与 [Tester 报告](../../Tester/reports/26092431-mode-feedback-r1.md)。§11.4 中「当前交付身份仍是 `2603db5`」的状态已由此取代，本报告的审计结论继续对同一 UFW 字节有效。
+`metadata/firmware-26092431.json` 已更新为交付记录：`hardware_status=USER_CONFIRMED_TESTED`、`independent_audit_status=COMPLETED`，`coverage` 指向本报告与 [Tester 报告](../../Tester/reports/26092431-mode-feedback-r1.md)。§11.4 中「当前交付身份仍是 `343a0d2`」的状态已由此取代，本报告的审计结论继续对同一 UFW 字节有效。
+
+### 12.1 提交重签名与 SHA 映射
+
+交付提交按用户要求使用其 SSH 密钥（ed25519，指纹 `SHA256:quW1UdiOatEuBDQafx/xKS6YbhSP1QZSFmtOwWK3hgI`）重新签名。重签名只改提交对象，不改内容：每个提交的 tree 哈希与重签名前逐一致，因此 §1–§11 的结论、证据和复现命令仍然成立。
+
+| 内容 | 重签名前（未签名） | 重签名后（已签名） |
+| --- | --- | --- |
+| 认证 OUT 模式反馈与共享 BTHome 解析 | `2603db5` | `343a0d2` |
+| 审计反馈修复（AUD-01/03/05、布局断言、CI） | `2143a11` | `7fa6a7a` |
+| 交付身份、审计报告与实测覆盖记录 | `6fd6b22` | `603c8c0` |
+| 本报告 §12 交付绑定补记 | `ad1b43c` | `cfe99e8` |
+
+本报告正文的 commit 引用已更新为签名后的 SHA。重签名前的提交仍可通过保留 tag `archive/26092431-pre-signature`（指向重签名前的交付提交 `ad1b43c`）追溯，其祖先链完整保留。§1.1 一类「当时实际执行的本地操作」记录（如 `local/wt-2143a11`、`local/verify-2143a11` 证据目录）保留原名称，与磁盘实际路径一致，不再改写。

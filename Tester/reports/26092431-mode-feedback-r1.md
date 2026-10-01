@@ -1,9 +1,10 @@
 # LD2401 26092431 实机测试报告
 
 - 角色：Tester
-- 测试对象：commit `2603db5471e0e56a36ceb896a7ad50b3c16e3c4e`，Build ID `26092431-mode-feedback-r1`
+- 测试对象：commit `343a0d262a4a0960f27aca3da02dc3f40298345c`，Build ID `26092431-mode-feedback-r1`
 - 固件：`LD2401_2.50_26092431.ufw`，607840 字节，SHA-256 `367df6fde866918147b5ad5e61257e0cc8db00fecd872a2a6390885b9565872a`
-- 被测二进制与身份的绑定：实测期间 HEAD 为 `2603db5`；测试结束后 HEAD 前移到 `2143a11`（Developer 针对审计反馈的修复）。**同一 UFW 字节已在干净 `2143a11` 上用 `--release` 复现**（§1.1），因此本报告的实机结论对两个 commit 同样成立；交付身份由维护者决定。
+- 被测二进制与身份的绑定：实测期间 HEAD 为 `343a0d2`；测试结束后 HEAD 前移到 `7fa6a7a`（Developer 针对审计反馈的修复）。**同一 UFW 字节已在干净 `7fa6a7a` 上用 `--release` 复现**（§1.1），因此本报告的实机结论对两个 commit 同样成立；交付身份由维护者决定。
+- 提交签名与 SHA 映射：交付提交按用户要求用其 SSH 密钥（ed25519，指纹 `SHA256:quW1UdiOatEuBDQafx/xKS6YbhSP1QZSFmtOwWK3hgI`）重新签名，重签名不改 tree。本报告引用的 commit 为签名后 SHA：`2603db5→343a0d2`、`2143a11→7fa6a7a`；重签名前的提交由保留 tag `archive/26092431-pre-signature` 追溯。§1.1 的本地命令与证据目录保留当时使用的名称。
 - HA 集成：`ld2401_control` 1.1.0（本报告不验证真实 HA 实例，见 §7）
 - 测试时间：2026-10-01
 - 被测设备：一台实机模块（显示地址脱敏为 `82:CF:…:09:FB`），刷写前运行 2.50.26092430；报告收尾时设备仍运行 2.50.26092431，密钥未变
@@ -21,9 +22,9 @@
 
 刷写前工作树：`Auditor/` 下存在上一轮审计的未跟踪报告与工具，`Developer/`、`custom_components/`、`esphome/` 与 commit 一致；本次测试未改动任何 Developer 交付物。
 
-### 1.1 身份前移验证：干净 `2143a11` 复现同一字节
+### 1.1 身份前移验证：干净 `7fa6a7a` 复现同一字节
 
-实测期间交付身份是 `2603db5`；`2143a11` 只改测试、构建器断言与文档，未触及 `Developer/src`、`Developer/linker`、`custom_components/`、`esphome/`。为确认实机结论可否随身份前移，我在**独立 worktree**（`2143a11`，detached、`git status` 干净，事后已删除）用官方构建器做了一次 release 构建，未触碰当前工作树：
+实测期间交付身份是 `343a0d2`；`7fa6a7a` 只改测试、构建器断言与文档，未触及 `Developer/src`、`Developer/linker`、`custom_components/`、`esphome/`。为确认实机结论可否随身份前移，我在**独立 worktree**（`7fa6a7a`，detached、`git status` 干净，事后已删除）用官方构建器做了一次 release 构建，未触碰当前工作树：
 
 ```text
 git worktree add --detach local/wt-2143a11 2143a11
@@ -34,7 +35,7 @@ python -B <worktree>/Developer/tools/build.py --version 26092431 \
 
 | 字段 | 值 |
 | --- | --- |
-| `git_commit` | `2143a1164b30c54ab70d5f39a96beb2686f5f280` |
+| `git_commit` | `7fa6a7ad2e8d3ccd6562268489a69485603a1402` |
 | `git_dirty` | `false`（release 要求干净提交，满足） |
 | `output_sha256` | `367df6fde866918147b5ad5e61257e0cc8db00fecd872a2a6390885b9565872a` |
 | `output_size` / `new_app_bytes` / `tail_end` | 607840 / 176116 / `0x1e2b114` |
@@ -43,7 +44,7 @@ python -B <worktree>/Developer/tools/build.py --version 26092431 \
 
 该输出与已交接候选**逐字节相同**（607840 字节，SHA-256 相等）。构建器在 `26092431` 上把 `CANDIDATE_SHA` 作为断言（`build.py` 第 219 行），因此 release 构建成功本身即证明其复现了该候选。
 
-结论：**`2143a11` 可以在不改变任何固件字节的前提下承载该候选身份**；`2603db5` 的 dev 构建（`26092431-audit-fixes-dev1`，`git_dirty=true`）与其输出哈希也同为 `367df6fd…`。是否前移交付身份属维护者决定；无论哪种选择，本报告的实机结论都指向同一二进制。验证报告与包副本保存在 Git 忽略的 `local/verify-2143a11/`。
+结论：**`7fa6a7a` 可以在不改变任何固件字节的前提下承载该候选身份**；`343a0d2` 的 dev 构建（`26092431-audit-fixes-dev1`，`git_dirty=true`）与其输出哈希也同为 `367df6fd…`。是否前移交付身份属维护者决定；无论哪种选择，本报告的实机结论都指向同一二进制。验证报告与包副本保存在 Git 忽略的 `local/verify-2143a11/`。
 
 ## 2. 工具准备与离线自检
 
@@ -218,9 +219,10 @@ parity: (even → voltage) 19, (odd → distance) 23
 ### TST-03（中，交接身份）`metadata/firmware-26092431.json` 仍未反映本次测试
 
 - 该文件属维护者所有，本次未改动。测试后应更新：`hardware_status`、`coverage`（指向本报告）、必要时 `independent_audit_status`。
-- 交付身份需抉择：实测绑定 `2603db5`，而 HEAD 已前移 `2143a11`；§1.1 已证明同一字节可在干净 `2143a11` 上以 release 复现，因此前移不改变任何固件字节，但需要维护者决定以哪个 commit 作为交付身份，并从该 commit 重建 release 绑定与 handoff 记录。
+- 交付身份需抉择：实测绑定 `343a0d2`，而 HEAD 已前移 `7fa6a7a`；§1.1 已证明同一字节可在干净 `7fa6a7a` 上以 release 复现，因此前移不改变任何固件字节，但需要维护者决定以哪个 commit 作为交付身份，并从该 commit 重建 release 绑定与 handoff 记录。
 - 本次范围：`Tester/` 下的工具、README、requirements 与本报告；`Auditor/` 的审计工具身份与 `Auditor/README.md`；`metadata/role-tool-sources.json`；以及经用户授权修改的 `docs/protocol.md`、`docs/firmware-implementation.md`。`Developer/` 源码与候选二进制未改动，候选 UFW 仍为 `367df6fd…5872a`。
 - 提醒：`metadata/`、`docs/` 归维护者；Auditor 已按此边界只动审计工具身份那几行，Tester 的文档改动也建议由维护者提交前统一复核。
+- **后续状态（维护者，2026-10-01）**：`metadata/firmware-26092431.json` 已更新为交付记录（`hardware_status=USER_CONFIRMED_TESTED`、`independent_audit_status=COMPLETED`、`coverage` 指向本报告）。交付身份已选定：沿用 Build ID `26092431-mode-feedback-r1`，并由干净提交的 release 报告绑定；因该选择只更换构建 commit、不改变固件字节，本报告的实机结论继续有效。提交随后按用户要求重签名，SHA 映射见报告头部与 [审计报告 §12.1](../../Auditor/reports/26092431-mode-feedback-r1.md)。
 
 ### AUD-02 状态
 
@@ -283,7 +285,7 @@ python -B Tester/tools/send_control.py --host <节点> --apikey-file local/espho
 
 ## 10. 结论
 
-对 Build ID `26092431-mode-feedback-r1` / UFW `367df6fd…5872a`（实测时 commit `2603db5`；同一字节已在干净 `2143a11` 上以 release 复现，见 §1.1）：
+对 Build ID `26092431-mode-feedback-r1` / UFW `367df6fd…5872a`（实测时 commit `343a0d2`；同一字节已在干净 `7fa6a7a` 上以 release 复现，见 §1.1）：
 
 - 刷写成功，A0 判据与广播版本字段同步指向 **2.50.26092431**，同一模块刷写前后仅版本字节变化。
 - 新固件的 `0x0F` 手动保持与 `0x10` 物理电平在每个认证帧中一致，与 A6 和认证控制两条写入路径的预期完全吻合；控制路径的认证、鲜度、防重放与目标校验共 5 类拒绝全部生效。

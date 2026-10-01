@@ -8,7 +8,7 @@
 
 | 报告 | 对象 |
 | --- | --- |
-| [26092431-mode-feedback-r1](reports/26092431-mode-feedback-r1.md) | commit `2603db5` / Build ID `26092431-mode-feedback-r1` / UFW `367df6fd…` |
+| [26092431-mode-feedback-r1](reports/26092431-mode-feedback-r1.md) | commit `343a0d2` / Build ID `26092431-mode-feedback-r1` / UFW `367df6fd…` |
 
 ## 专用工具
 

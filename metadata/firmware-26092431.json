@@ -13,6 +13,12 @@
   "source": "Developer/src",
   "builder": "Developer/tools/build.py",
   "record_type": "delivery; the source commit and Build ID are bound by the clean release build report",
+  "commit_signing": {
+    "format": "ssh",
+    "key_type": "ed25519",
+    "fingerprint": "SHA256:quW1UdiOatEuBDQafx/xKS6YbhSP1QZSFmtOwWK3hgI",
+    "note": "Delivery commits are signed; the clean release build report records the delivered commit as git_commit."
+  },
   "hardware_status": "USER_CONFIRMED_TESTED",
   "confirmed_on": "2026-10-01",
   "independent_audit_status": "COMPLETED",
